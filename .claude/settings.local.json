@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(robocopy \"G:/HABIBI/boutique-store\" \"G:/HABIBI/boutique-store-backup-2026-05-12\" /E /XD node_modules .next .open-next /XF \"*.log\")",
+      "Bash(Select-String \"Fichiers|Files|Répert|Dir\")",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

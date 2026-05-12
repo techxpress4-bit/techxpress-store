@@ -1,0 +1,44 @@
+{
+  "name": "techxpress",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "preview": "opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare deploy",
+    "sanity": "sanity dev",
+    "seed": "tsx sanity/seed/seedProducts.ts"
+  },
+  "dependencies": {
+    "@sanity/client": "^6.22.0",
+    "@sanity/image-url": "^1.0.2",
+    "@sanity/vision": "^3.62.0",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.105.4",
+    "next": "^15.5.18",
+    "next-sanity": "^9.8.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.4.1",
+    "resend": "^4.0.0",
+    "sanity": "^3.62.0"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "^1.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^9",
+    "eslint-config-next": "^15.5.18",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5",
+    "wrangler": "^4.86.0"
+  }
+}
