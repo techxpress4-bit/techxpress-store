@@ -1,3 +1,5 @@
+const publicFilter = `(statut == "publie" || !defined(statut))`;
+
 export const allCategoriesQuery = `
   *[_type == "category"] | order(ordre asc) {
     _id, nom, slug, icone, description, ordre
@@ -5,29 +7,29 @@ export const allCategoriesQuery = `
 `;
 
 export const featuredProductsQuery = `
-  *[_type == "product" && featured == true] | order(_createdAt desc) [0...16] {
+  *[_type == "product" && featured == true && ${publicFilter}] | order(_createdAt desc) [0...16] {
     _id, _createdAt, nom, slug,
     categorie->{ nom, slug },
     photos,
-    prix, enStock, optionAbonnement, nouveaute
+    prix, prixPromo, enStock, optionAbonnement, nouveaute
   }
 `;
 
 export const allProductsQuery = `
-  *[_type == "product"] | order(_createdAt desc) {
+  *[_type == "product" && ${publicFilter}] | order(_createdAt desc) {
     _id, _createdAt, nom, slug,
     categorie->{ nom, slug },
     photos,
-    prix, enStock, optionAbonnement, featured, nouveaute
+    prix, prixPromo, enStock, optionAbonnement, featured, nouveaute
   }
 `;
 
 export const productsByCategoryQuery = `
-  *[_type == "product" && categorie->slug.current == $categorie] | order(_createdAt desc) {
+  *[_type == "product" && categorie->slug.current == $categorie && ${publicFilter}] | order(_createdAt desc) {
     _id, _createdAt, nom, slug,
     categorie->{ nom, slug },
     photos,
-    prix, enStock, optionAbonnement, nouveaute
+    prix, prixPromo, enStock, optionAbonnement, nouveaute
   }
 `;
 
@@ -38,7 +40,7 @@ export const productBySlugQuery = `
     photos,
     description,
     ficheTechnique,
-    prix, enStock, optionAbonnement
+    prix, prixPromo, prixAvecAbonnement, enStock, optionAbonnement
   }
 `;
 

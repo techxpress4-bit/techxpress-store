@@ -370,7 +370,7 @@ export default function LoginClient() {
         {/* Admin access */}
         <div className="mt-4 text-center">
           <a
-            href="https://gdccl23z.sanity.studio"
+            href="https://techxpress-dz.sanity.studio"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-[#4b5563] hover:text-[#6b7280] transition-colors"

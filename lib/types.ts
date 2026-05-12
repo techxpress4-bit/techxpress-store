@@ -22,6 +22,8 @@ export interface Product {
   description?: PortableTextBlock[];
   ficheTechnique?: FicheTechniqueItem[];
   prix: number;
+  prixPromo?: number;
+  prixAvecAbonnement?: number;
   enStock: boolean;
   optionAbonnement: boolean;
   featured: boolean;

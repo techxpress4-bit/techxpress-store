@@ -13,6 +13,11 @@ export default function AddToCartSection({ product }: Props) {
   const [option, setOption] = useState<AbonnementOption>("box-seule");
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") || "";
 
+  const activePrice =
+    product.optionAbonnement && option === "box-abonnement" && product.prixAvecAbonnement
+      ? product.prixAvecAbonnement
+      : product.prix;
+
   const handleAddToCart = () => {
     if (!product.enStock) return;
     const selectedOption = product.optionAbonnement ? option : undefined;
@@ -22,14 +27,28 @@ export default function AddToCartSection({ product }: Props) {
     if (typeof window !== "undefined" && (window as any).gtag) {
       (window as any).gtag("event", "add_to_cart", {
         currency: "DZD",
-        value: product.prix,
-        items: [{ item_id: product._id, item_name: product.nom, price: product.prix }],
+        value: activePrice,
+        items: [{ item_id: product._id, item_name: product.nom, price: activePrice }],
       });
     }
   };
 
   return (
     <div className="space-y-4">
+
+      {/* Prix dynamique */}
+      <div className="flex items-end gap-3 mb-2">
+        <p className="price text-4xl transition-all duration-200">
+          {activePrice.toLocaleString("fr-DZ")}
+          <span className="text-xl">DA</span>
+        </p>
+        {product.optionAbonnement && product.prixAvecAbonnement && option === "box-abonnement" && (
+          <span className="mb-1 text-xs px-2 py-1 rounded-full font-semibold" style={{ background: "rgba(107,63,160,0.2)", color: "#c084fc", border: "1px solid rgba(192,132,252,0.3)" }}>
+            Box + Abonnement 12 mois
+          </span>
+        )}
+      </div>
+
       {/* Abonnement option */}
       {product.optionAbonnement && (
         <div>
@@ -37,6 +56,8 @@ export default function AddToCartSection({ product }: Props) {
             Choisir une option
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
+
+            {/* Box seule */}
             <button
               onClick={() => setOption("box-seule")}
               className={`flex-1 p-4 rounded-xl text-left transition-all duration-200 ${
@@ -52,9 +73,13 @@ export default function AddToCartSection({ product }: Props) {
                 </span>
                 <span className="text-sm font-semibold text-white">Box seule</span>
               </div>
-              <p className="text-xs text-[#6b7280] ml-6">Sans abonnement TV inclus</p>
+              <p className="text-xs text-[#6b7280] ml-6 mb-2">Sans abonnement TV inclus</p>
+              <p className="text-sm font-bold ml-6" style={{ color: "var(--violet-light)" }}>
+                {product.prix.toLocaleString("fr-DZ")} DA
+              </p>
             </button>
 
+            {/* Box + Abonnement */}
             <button
               onClick={() => setOption("box-abonnement")}
               className={`flex-1 p-4 rounded-xl text-left transition-all duration-200 relative ${
@@ -75,8 +100,14 @@ export default function AddToCartSection({ product }: Props) {
                 </span>
                 <span className="text-sm font-semibold text-white">Box + Abonnement TV</span>
               </div>
-              <p className="text-xs text-[#6b7280] ml-6">Abonnement IPTV inclus</p>
+              <p className="text-xs text-[#6b7280] ml-6 mb-2">Abonnement IPTV inclus</p>
+              <p className="text-sm font-bold ml-6" style={{ color: "var(--violet-light)" }}>
+                {product.prixAvecAbonnement
+                  ? `${product.prixAvecAbonnement.toLocaleString("fr-DZ")} DA`
+                  : "Prix sur demande"}
+              </p>
             </button>
+
           </div>
         </div>
       )}
