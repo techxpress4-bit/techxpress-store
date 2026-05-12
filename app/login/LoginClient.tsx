@@ -369,12 +369,14 @@ export default function LoginClient() {
 
         {/* Admin access */}
         <div className="mt-4 text-center">
-          <Link
-            href="/studio"
+          <a
+            href="https://gdccl23z.sanity.studio"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-xs text-[#4b5563] hover:text-[#6b7280] transition-colors"
           >
             Accès administration →
-          </Link>
+          </a>
         </div>
       </div>
     </div>
