@@ -59,6 +59,12 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Badges — top left */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+          {promoActive && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase"
+              style={{ background: "rgba(239,68,68,0.85)", color: "#fff", border: "1px solid rgba(239,68,68,0.5)" }}>
+              Promo
+            </span>
+          )}
           {nouveau && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase"
               style={{ background: "rgba(0,98,51,0.85)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.3)" }}>
