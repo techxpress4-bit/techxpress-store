@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import type { Product, AbonnementOption } from "@/lib/types";
 
@@ -22,7 +23,7 @@ export default function AddToCartSection({ product }: Props) {
     if (!product.enStock) return;
     const selectedOption = product.optionAbonnement ? option : undefined;
     addItem(product, selectedOption);
-    openModal(product);
+    openModal({ product, quantity: 1, optionAbonnement: selectedOption });
 
     if (typeof window !== "undefined" && (window as any).gtag) {
       (window as any).gtag("event", "add_to_cart", {
@@ -150,7 +151,7 @@ export default function AddToCartSection({ product }: Props) {
 
       {/* Commander directement */}
       {product.enStock && (
-        <a
+        <Link
           href="/commander"
           className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#1f1f1f]"
           style={{ border: "1px solid var(--border)", color: "var(--text-secondary)" }}
@@ -159,7 +160,7 @@ export default function AddToCartSection({ product }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           Commander maintenant
-        </a>
+        </Link>
       )}
 
       {/* WhatsApp link */}
