@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { sanityFetch } from "@/lib/sanity";
+import { settingsQuery } from "@/lib/queries";
+import type { SanitySettings } from "@/lib/types";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -18,6 +22,7 @@ const inter = Inter({
 });
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Banniere from "@/components/Banniere";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import CookieBanner from "@/components/CookieBanner";
 import Analytics from "@/components/Analytics";
@@ -31,9 +36,10 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://techxpressdz.com"),
   title: {
-    default: "Tech Xpress — Électronique & Multimédia en Algérie",
-    template: "%s | Tech Xpress",
+    default: "TechXpressDZ — Électronique & Multimédia en Algérie",
+    template: "%s | TechXpressDZ",
   },
   description:
     "Votre boutique en ligne de produits électroniques et multimédias en Algérie. Box TV Android, accessoires téléphone, routeurs, câbles et plus. Livraison dans toute l'Algérie, paiement à la livraison.",
@@ -46,24 +52,60 @@ export const metadata: Metadata = {
     "livraison Algérie",
   ],
   openGraph: {
-    title: "Tech Xpress — Électronique & Multimédia en Algérie",
-    description:
-      "Boutique en ligne premium de produits tech en Algérie. Paiement à la livraison.",
-    siteName: "Tech Xpress",
+    title: "TechXpressDZ — Électronique & Multimédia en Algérie",
+    description: "Boutique en ligne premium de produits tech en Algérie. Paiement à la livraison.",
+    siteName: "TechXpressDZ",
     locale: "fr_DZ",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "TechXpressDZ — Électronique en Algérie",
+    description: "Box TV, accessoires, routeurs. Livraison nationale. Paiement à la livraison.",
+  },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let settings: SanitySettings | null = null;
+  try {
+    settings = await sanityFetch<SanitySettings>(settingsQuery, {}, { revalidate: 300 });
+  } catch {}
+
+  const banniere = settings?.banniere;
+  const bannerActive = !!(banniere?.active && banniere?.texte);
+  const bannerH = bannerActive ? 32 : 0;
+
   return (
-    <html lang="fr" className={`${outfit.variable} ${inter.variable}`}>
-      <body>
+    <html
+      lang="fr"
+      className={`${outfit.variable} ${inter.variable}`}
+      style={{ "--banner-h": `${bannerH}px` } as React.CSSProperties}
+    >
+      {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script id="ga-init" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', { page_path: window.location.pathname });
+            `}
+          </Script>
+        </>
+      )}
+      <body style={bannerH ? { paddingTop: bannerH } : undefined}>
         <CartProvider>
+          {bannerActive && (
+            <Banniere texte={banniere!.texte!} lien={banniere?.lien} />
+          )}
           <Toaster
             position="top-right"
             toastOptions={{
