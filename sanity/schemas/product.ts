@@ -12,6 +12,7 @@ export const productSchema = defineType({
     { name: "media",      title: "Médias"                     },
     { name: "contenu",    title: "Contenu"                    },
     { name: "parametres", title: "Paramètres"                 },
+    { name: "seo",        title: "SEO"                        },
   ],
 
   fields: [
@@ -29,7 +30,18 @@ export const productSchema = defineType({
       type: "slug",
       group: "details",
       options: { source: "nom", maxLength: 96 },
-      validation: (Rule) => Rule.required(),
+      validation: (Rule) =>
+        Rule.required().custom(async (slug, context) => {
+          if (!slug?.current) return true;
+          const { document, getClient } = context as any;
+          const client = getClient({ apiVersion: "2024-01-01" });
+          const id = (document?._id ?? "").replace(/^drafts\./, "");
+          const count = (await client.fetch(
+            `count(*[_type == "product" && slug.current == $slug && !(_id in [$id, "drafts." + $id])])`,
+            { slug: slug.current, id }
+          )) as number;
+          return count === 0 ? true : "Ce slug est déjà utilisé par un autre produit";
+        }),
     }),
     defineField({
       name: "categorie",
@@ -38,6 +50,13 @@ export const productSchema = defineType({
       group: "details",
       to: [{ type: "category" }],
       validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: "marque",
+      title: "Marque / Fabricant",
+      type: "string",
+      group: "details",
+      description: "Ex: Samsung, Apple, Xiaomi. Utilisé pour le SEO et les filtres.",
     }),
     defineField({
       name: "statut",
@@ -78,6 +97,15 @@ export const productSchema = defineType({
             return "Le prix promo doit être inférieur au prix normal";
           return true;
         }),
+    }),
+    defineField({
+      name: "dateFinPromo",
+      title: "Date de fin de promo",
+      type: "date",
+      group: "stock",
+      description: "Optionnel — la promo sera automatiquement ignorée après cette date.",
+      hidden: ({ document }) => !document?.prixPromo,
+      options: { dateFormat: "DD/MM/YYYY" },
     }),
     defineField({
       name: "prixAvecAbonnement",
@@ -125,11 +153,15 @@ export const productSchema = defineType({
               name: "alt",
               title: "Texte alternatif",
               type: "string",
+              validation: (Rule: any) =>
+                Rule.warning("Ajoutez un alt text pour améliorer le référencement et l'accessibilité."),
             },
           ],
         },
       ],
       options: { layout: "grid" },
+      validation: (Rule) =>
+        Rule.min(1).warning("Ajoutez au moins 1 photo pour que le produit s'affiche correctement"),
     }),
 
     // ── Contenu ───────────────────────────────────────────
@@ -160,6 +192,25 @@ export const productSchema = defineType({
       ],
     }),
 
+    // ── SEO ───────────────────────────────────────────────
+    defineField({
+      name: "metaTitre",
+      title: "Titre SEO personnalisé",
+      type: "string",
+      group: "seo",
+      description: "Laissez vide pour utiliser le nom du produit. Max 60 caractères.",
+      validation: (Rule) => Rule.max(60).warning("Idéalement ≤ 60 caractères pour Google"),
+    }),
+    defineField({
+      name: "metaDescription",
+      title: "Meta description",
+      type: "text",
+      rows: 2,
+      group: "seo",
+      description: "Résumé affiché dans les résultats Google. Max 155 caractères.",
+      validation: (Rule) => Rule.max(155).warning("Idéalement ≤ 155 caractères"),
+    }),
+
     // ── Paramètres ────────────────────────────────────────
     defineField({
       name: "featured",
@@ -184,6 +235,14 @@ export const productSchema = defineType({
       group: "parametres",
       initialValue: false,
       description: "Pour les Box TV : affiche le choix Box seule / Box + Abonnement",
+    }),
+    defineField({
+      name: "ordre",
+      title: "Ordre d'affichage",
+      type: "number",
+      group: "parametres",
+      description: "Laissez vide pour l'ordre par défaut (date). 1 = affiché en premier dans le catalogue.",
+      validation: (Rule) => Rule.min(1).integer().warning("Entier positif (ex: 1, 2, 3…)"),
     }),
   ],
 
@@ -219,8 +278,9 @@ export const productSchema = defineType({
       enStock:  "enStock",
       statut:   "statut",
       quantite: "stockQuantite",
+      marque:   "marque",
     },
-    prepare({ title, media, prix, prixPromo, enStock, statut, quantite }) {
+    prepare({ title, media, prix, prixPromo, enStock, statut, quantite, marque }) {
       const statutIcon =
         statut === "brouillon" ? "📝 " :
         statut === "archive"   ? "🗃️ " : "";
@@ -233,10 +293,11 @@ export const productSchema = defineType({
         enStock === false ? "🔴 Rupture" :
         quantite != null  ? `✅ ${quantite} en stock` :
         "✅ En stock";
+      const marqueLabel = marque ? ` · ${marque}` : "";
       return {
         title: `${statutIcon}${title}`,
         media,
-        subtitle: `${prixLabel}  ·  ${stockLabel}`,
+        subtitle: `${prixLabel}  ·  ${stockLabel}${marqueLabel}`,
       };
     },
   },

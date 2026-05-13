@@ -3,6 +3,8 @@ import { structureTool } from "sanity/structure";
 import { visionTool } from "@sanity/vision";
 import { schemas } from "./sanity/schemas";
 
+const isDev = process.env.NODE_ENV === "development";
+
 export default defineConfig({
   name: "techxpress",
   title: "Tech Xpress — Back Office",
@@ -116,6 +118,27 @@ export default defineConfig({
                           .defaultOrdering([{ field: "_createdAt", direction: "desc" }])
                       ),
 
+                    S.divider(),
+
+                    // Qualité contenu
+                    S.listItem()
+                      .title("⚠️  Sans meta description")
+                      .child(
+                        S.documentList()
+                          .title("Produits sans meta description")
+                          .filter('_type == "product" && !defined(metaDescription) && (statut == "publie" || !defined(statut))')
+                          .defaultOrdering([{ field: "_createdAt", direction: "desc" }])
+                      ),
+
+                    S.listItem()
+                      .title("📷  Sans photos")
+                      .child(
+                        S.documentList()
+                          .title("Produits sans photos")
+                          .filter('_type == "product" && (count(photos) == 0 || !defined(photos)) && (statut == "publie" || !defined(statut))')
+                          .defaultOrdering([{ field: "_createdAt", direction: "desc" }])
+                      ),
+
                   ])
               ),
 
@@ -128,11 +151,42 @@ export default defineConfig({
                 S.documentTypeList("category")
                   .title("Catégories")
                   .defaultOrdering([{ field: "ordre", direction: "asc" }])
+                  .child((catId) =>
+                    S.list()
+                      .title("Catégorie")
+                      .items([
+                        S.listItem()
+                          .title("✏️  Modifier la catégorie")
+                          .child(S.document().schemaType("category").documentId(catId)),
+                        S.listItem()
+                          .title("🛍️  Produits de cette catégorie")
+                          .child(
+                            S.documentList()
+                              .title("Produits de la catégorie")
+                              .filter('_type == "product" && references($catId)')
+                              .params({ catId })
+                              .defaultOrdering([{ field: "nom", direction: "asc" }])
+                          ),
+                      ])
+                  )
+              ),
+
+            S.divider(),
+
+            // ── PARAMÈTRES ────────────────────────────────
+            S.listItem()
+              .title("⚙️  Paramètres boutique")
+              .id("settings")
+              .child(
+                S.editor()
+                  .id("settings")
+                  .schemaType("settings")
+                  .documentId("boutique-settings")
               ),
 
           ]),
     }),
-    visionTool(),
+    ...(isDev ? [visionTool()] : []),
   ],
   schema: { types: schemas },
   basePath: "/studio",
