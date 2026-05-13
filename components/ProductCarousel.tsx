@@ -46,9 +46,9 @@ export default function ProductCarousel({ products }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-1 h-7 rounded-full flex-shrink-0"
+          <div className="w-1 h-9 rounded-full flex-shrink-0"
             style={{ background: "linear-gradient(180deg, var(--violet), var(--violet-light))" }} />
-          <h2 className="text-xl font-bold text-white" style={{ fontFamily: "var(--font-syne)" }}>
+          <h2 className="text-2xl lg:text-3xl font-bold text-white" style={{ fontFamily: "var(--font-syne)" }}>
             Best Sellers
           </h2>
         </div>
