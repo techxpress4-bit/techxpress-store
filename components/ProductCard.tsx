@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/types";
+import { isPromoActive } from "@/lib/types";
 import { urlFor } from "@/lib/sanity";
 
 interface ProductCardProps {
@@ -16,6 +17,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       : null;
 
   const nouveau = product.nouveaute === true;
+  const promoActive = isPromoActive(product);
 
   return (
     <Link
@@ -101,10 +103,17 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
 
         <div className="mt-auto flex items-end justify-between gap-2">
-          <p className="price text-lg">
-            {product.prix.toLocaleString("fr-DZ")}
-            <span>DA</span>
-          </p>
+          <div>
+            <p className="price text-lg leading-none">
+              {(promoActive ? product.prixPromo! : product.prix).toLocaleString("fr-DZ")}
+              <span>DA</span>
+            </p>
+            {promoActive && product.prixPromo! < product.prix && (
+              <p className="text-xs text-[#6b7280] line-through mt-0.5">
+                {product.prix.toLocaleString("fr-DZ")} DA
+              </p>
+            )}
+          </div>
           <span className="text-[10px] text-[#4b5563] pb-0.5">COD</span>
         </div>
       </div>

@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { Category } from "@/lib/types";
+import { urlFor } from "@/lib/sanity";
 
 const categoryMeta: Record<string, { icon: string; gradient: string; accent: string }> = {
   "box-tv-android":        { icon: "📺", gradient: "135deg, #1a0533 0%, #4a1f7a 100%", accent: "#9b59fc" },
@@ -120,6 +122,15 @@ export default function CategoryCarousel({ categories }: Props) {
             >
               <div className="absolute inset-0 transition-opacity duration-300"
                 style={{ background: `linear-gradient(${meta.gradient})` }} />
+              {cat.image?.asset && (
+                <Image
+                  src={urlFor(cat.image).width(200).height(140).fit("crop").url()}
+                  alt={cat.nom}
+                  fill
+                  className="object-cover opacity-50"
+                  sizes="200px"
+                />
+              )}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 style={{ background: "rgba(255,255,255,0.05)" }} />
               <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
