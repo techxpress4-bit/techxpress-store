@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import type { Product, AbonnementOption } from "@/lib/types";
+import { isPromoActive } from "@/lib/types";
 
 interface Props {
   product: Product;
@@ -14,10 +15,12 @@ export default function AddToCartSection({ product }: Props) {
   const [option, setOption] = useState<AbonnementOption>("box-seule");
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") || "";
 
+  const promoActive = isPromoActive(product);
+  const prixBase = promoActive ? product.prixPromo! : product.prix;
   const activePrice =
     product.optionAbonnement && option === "box-abonnement" && product.prixAvecAbonnement
       ? product.prixAvecAbonnement
-      : product.prix;
+      : prixBase;
 
   const handleAddToCart = () => {
     if (!product.enStock) return;
@@ -38,11 +41,21 @@ export default function AddToCartSection({ product }: Props) {
     <div className="space-y-4">
 
       {/* Prix dynamique */}
-      <div className="flex items-end gap-3 mb-2">
+      <div className="flex items-end gap-3 mb-2 flex-wrap">
         <p className="price text-4xl transition-all duration-200">
           {activePrice.toLocaleString("fr-DZ")}
           <span className="text-xl">DA</span>
         </p>
+        {promoActive && option !== "box-abonnement" && (
+          <span className="mb-1 text-xl text-[#6b7280] line-through font-normal">
+            {product.prix.toLocaleString("fr-DZ")} DA
+          </span>
+        )}
+        {promoActive && option !== "box-abonnement" && (
+          <span className="mb-1 text-xs px-2 py-1 rounded-full font-semibold" style={{ background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }}>
+            PROMO
+          </span>
+        )}
         {product.optionAbonnement && product.prixAvecAbonnement && option === "box-abonnement" && (
           <span className="mb-1 text-xs px-2 py-1 rounded-full font-semibold" style={{ background: "rgba(107,63,160,0.2)", color: "#c084fc", border: "1px solid rgba(192,132,252,0.3)" }}>
             Box + Abonnement 12 mois
@@ -76,7 +89,12 @@ export default function AddToCartSection({ product }: Props) {
               </div>
               <p className="text-xs text-[#6b7280] ml-6 mb-2">Sans abonnement TV inclus</p>
               <p className="text-sm font-bold ml-6" style={{ color: "var(--violet-light)" }}>
-                {product.prix.toLocaleString("fr-DZ")} DA
+                {prixBase.toLocaleString("fr-DZ")} DA
+                {promoActive && (
+                  <span className="ml-1.5 text-xs text-[#6b7280] line-through font-normal">
+                    {product.prix.toLocaleString("fr-DZ")}
+                  </span>
+                )}
               </p>
             </button>
 
