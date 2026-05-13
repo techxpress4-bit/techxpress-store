@@ -100,11 +100,10 @@ export const productSchema = defineType({
     }),
     defineField({
       name: "dateFinPromo",
-      title: "Date de fin de promo",
+      title: "Date de fin de promo (optionnel)",
       type: "date",
       group: "stock",
-      description: "Optionnel — la promo sera automatiquement ignorée après cette date.",
-      hidden: ({ document }) => !document?.prixPromo,
+      description: "Si renseigné, la promo s'arrête automatiquement à cette date. Laisser vide = promo permanente.",
       options: { dateFormat: "DD/MM/YYYY" },
     }),
     defineField({
