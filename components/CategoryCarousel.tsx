@@ -117,6 +117,7 @@ export default function CategoryCarousel({ categories }: Props) {
               className="group relative rounded-2xl overflow-hidden flex-shrink-0 cursor-pointer"
               style={{
                 width: "clamp(140px, 18vw, 200px)",
+                minHeight: "120px",
                 border: "1px solid rgba(255,255,255,0.06)",
               }}
             >
@@ -137,9 +138,11 @@ export default function CategoryCarousel({ categories }: Props) {
                 style={{ boxShadow: `inset 0 0 0 1px ${meta.accent}55` }} />
 
               <div className="relative z-10 flex flex-col items-center justify-center py-7 px-3 text-center gap-2.5">
-                <span className="text-4xl transition-transform duration-300 group-hover:scale-110 drop-shadow-lg">
-                  {cat.icone || meta.icon}
-                </span>
+                {cat.icone && (
+                  <span className="text-4xl transition-transform duration-300 group-hover:scale-110 drop-shadow-lg">
+                    {cat.icone}
+                  </span>
+                )}
                 <p className="text-xs font-bold text-white leading-tight"
                   style={{ fontFamily: "var(--font-syne)", textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}>
                   {cat.nom}

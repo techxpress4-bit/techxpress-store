@@ -104,18 +104,54 @@ export default function Navbar() {
             <div className="flex items-center gap-2">
               {/* Login / User */}
               {user ? (
-                <Link
-                  href="/account"
-                  className="hidden sm:flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[#2a2a2a] bg-[#161616] hover:border-violet hover:bg-[rgba(107,63,160,0.1)] transition-all duration-200 text-xs font-semibold text-[#9ca3af] hover:text-white"
-                >
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
-                    style={{ background: "var(--violet)" }}>
-                    {(user.user_metadata?.prenom || user.email || "U").charAt(0).toUpperCase()}
-                  </span>
-                  <span className="max-w-[90px] truncate">
-                    {user.user_metadata?.prenom || user.email?.split("@")[0]}
-                  </span>
-                </Link>
+                <div className="relative group hidden sm:block">
+                  <button
+                    className="flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[#2a2a2a] bg-[#161616] group-hover:border-violet group-hover:bg-[rgba(107,63,160,0.1)] transition-all duration-200 text-xs font-semibold text-[#9ca3af] group-hover:text-white"
+                  >
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                      style={{ background: "var(--violet)" }}>
+                      {(user.user_metadata?.prenom || user.email || "U").charAt(0).toUpperCase()}
+                    </span>
+                    <span className="max-w-[90px] truncate">
+                      {user.user_metadata?.prenom || user.email?.split("@")[0]}
+                    </span>
+                    <svg className="w-3 h-3 ml-0.5 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div className="absolute top-full right-0 pt-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                    <div className="card p-1.5 w-48 space-y-0.5 shadow-2xl shadow-black/70">
+                      <Link
+                        href="/account"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[#9ca3af] hover:text-white hover:bg-[#1f1f1f] transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Mon compte
+                      </Link>
+                      <Link
+                        href="/mes-commandes"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[#9ca3af] hover:text-white hover:bg-[#1f1f1f] transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+                        </svg>
+                        Mes commandes
+                      </Link>
+                      <div className="h-px bg-[#2a2a2a] mx-2 my-1" />
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Se déconnecter
+                      </button>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <Link
                   href="/login"
