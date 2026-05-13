@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { sanityFetch } from "@/lib/sanity";
+import { settingsQuery } from "@/lib/queries";
+import type { SanitySettings } from "@/lib/types";
 
-const categories = [
+const FALLBACK_INSTAGRAM = "https://www.instagram.com/dztechxpress?igsh=dTJxdnFueGg0Y3E5&utm_source=qr";
+const FALLBACK_TIKTOK = "https://www.tiktok.com/@techxpress23?is_from_webapp=1&sender_device=pc";
+
+const navCategories = [
   { nom: "Box TV Android", slug: "box-tv-android" },
   { nom: "Abonnements TV", slug: "abonnements-tv" },
   { nom: "Accessoires Téléphone", slug: "accessoires-telephone" },
@@ -10,8 +16,16 @@ const categories = [
   { nom: "Paraboles", slug: "paraboles" },
 ];
 
-export default function Footer() {
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "";
+export default async function Footer() {
+  let settings: SanitySettings | null = null;
+  try {
+    settings = await sanityFetch<SanitySettings>(settingsQuery, {}, { revalidate: 3600 });
+  } catch {}
+
+  const instagram = settings?.reseauxSociaux?.instagram || FALLBACK_INSTAGRAM;
+  const tiktok = settings?.reseauxSociaux?.tiktok || FALLBACK_TIKTOK;
+  const whatsappRaw = settings?.telephone || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "";
+  const whatsapp = whatsappRaw.replace(/\D/g, "");
 
   return (
     <footer className="mt-20" style={{ borderTop: "1px solid #1f1f1f", background: "#080808" }}>
@@ -56,7 +70,7 @@ export default function Footer() {
               Catégories
             </h3>
             <ul className="space-y-3">
-              {categories.map((cat) => (
+              {navCategories.map((cat) => (
                 <li key={cat.slug}>
                   <Link href={`/catalogue/${cat.slug}`}
                     className="text-sm text-[#6b7280] hover:text-[#8b5fc0] transition-colors flex items-center gap-2 group">
@@ -101,7 +115,7 @@ export default function Footer() {
             <ul className="space-y-3">
               {whatsapp && (
                 <li>
-                  <a href={`https://wa.me/${whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer"
+                  <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-3 text-sm text-[#6b7280] hover:text-[#25D366] transition-colors group">
                     <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#111] border border-[#2a2a2a] group-hover:border-[#25D366] group-hover:bg-[rgba(37,211,102,0.08)] transition-all flex-shrink-0">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -113,7 +127,7 @@ export default function Footer() {
                 </li>
               )}
               <li>
-                <a href="https://www.instagram.com/dztechxpress?igsh=dTJxdnFueGg0Y3E5&utm_source=qr" target="_blank" rel="noopener noreferrer"
+                <a href={instagram} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-3 text-sm text-[#6b7280] hover:text-[#E1306C] transition-colors group">
                   <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#111] border border-[#2a2a2a] group-hover:border-[#E1306C] group-hover:bg-[rgba(225,48,108,0.08)] transition-all flex-shrink-0">
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -124,7 +138,7 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="https://www.tiktok.com/@techxpress23?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer"
+                <a href={tiktok} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-3 text-sm text-[#6b7280] hover:text-white transition-colors group">
                   <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#111] border border-[#2a2a2a] group-hover:border-white group-hover:bg-[rgba(255,255,255,0.05)] transition-all flex-shrink-0">
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
