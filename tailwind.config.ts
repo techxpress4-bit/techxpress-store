@@ -30,8 +30,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        syne: ["Arial", "Helvetica Neue", "Helvetica", "sans-serif"],
-        dm: ["Georgia", "Times New Roman", "Times", "serif"],
+        syne: ["var(--font-heading-var)", "Outfit", "Arial", "sans-serif"],
+        dm: ["var(--font-body-var)", "Inter", "system-ui", "sans-serif"],
       },
       animation: {
         "fade-in": "fadeIn 0.5s ease forwards",

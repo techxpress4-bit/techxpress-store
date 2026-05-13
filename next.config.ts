@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: "cdn.sanity.io",
       },
     ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+  },
+  experimental: {
+    optimizePackageImports: ["@sanity/client", "sanity", "next-sanity", "@sanity/image-url"],
   },
 };
 
