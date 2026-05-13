@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { urlFor } from "@/lib/sanity";
+import { getItemPrice } from "@/lib/types";
 
 export default function CartModal() {
   const { closeModal, lastAdded, totalItems } = useCart();
+  const prevOverflow = useRef("");
 
   useEffect(() => {
+    prevOverflow.current = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    return () => { document.body.style.overflow = prevOverflow.current; };
   }, []);
+
+  const price = lastAdded ? getItemPrice(lastAdded) : 0;
 
   return (
     <>
@@ -51,10 +56,10 @@ export default function CartModal() {
           {lastAdded && (
             <div className="flex gap-4 p-3 rounded-xl mb-5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
               <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-[#111]">
-                {lastAdded.photos && lastAdded.photos.length > 0 ? (
+                {lastAdded.product.photos && lastAdded.product.photos.length > 0 ? (
                   <Image
-                    src={urlFor(lastAdded.photos[0]).width(128).height(128).url()}
-                    alt={lastAdded.nom}
+                    src={urlFor(lastAdded.product.photos[0]).width(128).height(128).url()}
+                    alt={lastAdded.product.nom}
                     fill
                     className="object-cover"
                   />
@@ -68,10 +73,15 @@ export default function CartModal() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white line-clamp-2" style={{ fontFamily: "var(--font-syne)" }}>
-                  {lastAdded.nom}
+                  {lastAdded.product.nom}
                 </p>
+                {lastAdded.optionAbonnement && (
+                  <p className="text-xs text-[#9ca3af] mt-0.5">
+                    {lastAdded.optionAbonnement === "box-abonnement" ? "Box + Abonnement TV" : "Box seule"}
+                  </p>
+                )}
                 <p className="price text-sm mt-1">
-                  {lastAdded.prix.toLocaleString("fr-DZ")}<span>DA</span>
+                  {price.toLocaleString("fr-DZ")}<span>DA</span>
                 </p>
               </div>
             </div>
@@ -94,10 +104,7 @@ export default function CartModal() {
               </svg>
               Voir le panier
             </Link>
-            <button
-              onClick={closeModal}
-              className="btn-secondary justify-center w-full"
-            >
+            <button onClick={closeModal} className="btn-secondary justify-center w-full">
               Continuer les achats
             </button>
           </div>

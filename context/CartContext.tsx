@@ -6,23 +6,25 @@ import {
   useReducer,
   useEffect,
   useCallback,
+  useState,
   type ReactNode,
 } from "react";
 import type { CartItem, Product, AbonnementOption } from "@/lib/types";
+import { getItemPrice } from "@/lib/types";
 
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
-  lastAdded: Product | null;
+  lastAdded: CartItem | null;
 }
 
 type CartAction =
   | { type: "ADD_ITEM"; product: Product; optionAbonnement?: AbonnementOption }
-  | { type: "REMOVE_ITEM"; productId: string }
-  | { type: "UPDATE_QUANTITY"; productId: string; quantity: number }
-  | { type: "UPDATE_OPTION"; productId: string; optionAbonnement: AbonnementOption }
+  | { type: "REMOVE_ITEM"; productId: string; optionAbonnement?: AbonnementOption }
+  | { type: "UPDATE_QUANTITY"; productId: string; quantity: number; optionAbonnement?: AbonnementOption }
+  | { type: "UPDATE_OPTION"; productId: string; fromOption?: AbonnementOption; toOption: AbonnementOption }
   | { type: "CLEAR_CART" }
-  | { type: "OPEN_MODAL"; product: Product }
+  | { type: "OPEN_MODAL"; item: CartItem }
   | { type: "CLOSE_MODAL" }
   | { type: "HYDRATE"; items: CartItem[] };
 
@@ -49,69 +51,110 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         ...state,
         items: [
           ...state.items,
-          {
-            product: action.product,
-            quantity: 1,
-            optionAbonnement: action.optionAbonnement,
-          },
+          { product: action.product, quantity: 1, optionAbonnement: action.optionAbonnement },
         ],
       };
     }
+
     case "REMOVE_ITEM":
       return {
         ...state,
-        items: state.items.filter((i) => i.product._id !== action.productId),
+        items: state.items.filter(
+          (i) =>
+            !(i.product._id === action.productId &&
+              i.optionAbonnement === action.optionAbonnement)
+        ),
       };
-    case "UPDATE_QUANTITY":
+
+    case "UPDATE_QUANTITY": {
       if (action.quantity <= 0) {
         return {
           ...state,
-          items: state.items.filter((i) => i.product._id !== action.productId),
+          items: state.items.filter(
+            (i) =>
+              !(i.product._id === action.productId &&
+                i.optionAbonnement === action.optionAbonnement)
+          ),
         };
       }
       return {
         ...state,
         items: state.items.map((i) =>
-          i.product._id === action.productId
+          i.product._id === action.productId &&
+          i.optionAbonnement === action.optionAbonnement
             ? { ...i, quantity: action.quantity }
             : i
         ),
       };
-    case "UPDATE_OPTION":
+    }
+
+    case "UPDATE_OPTION": {
+      const source = state.items.find(
+        (i) =>
+          i.product._id === action.productId &&
+          i.optionAbonnement === action.fromOption
+      );
+      const target = state.items.find(
+        (i) =>
+          i.product._id === action.productId &&
+          i.optionAbonnement === action.toOption
+      );
+      if (target && source) {
+        // Target option already exists → merge quantity, remove source
+        return {
+          ...state,
+          items: state.items
+            .filter(
+              (i) =>
+                !(i.product._id === action.productId &&
+                  i.optionAbonnement === action.fromOption)
+            )
+            .map((i) =>
+              i.product._id === action.productId &&
+              i.optionAbonnement === action.toOption
+                ? { ...i, quantity: i.quantity + (source.quantity) }
+                : i
+            ),
+        };
+      }
       return {
         ...state,
         items: state.items.map((i) =>
-          i.product._id === action.productId
-            ? { ...i, optionAbonnement: action.optionAbonnement }
+          i.product._id === action.productId &&
+          i.optionAbonnement === action.fromOption
+            ? { ...i, optionAbonnement: action.toOption }
             : i
         ),
       };
+    }
+
     case "CLEAR_CART":
       return { ...state, items: [] };
+
     case "OPEN_MODAL":
-      return { ...state, isOpen: true, lastAdded: action.product };
+      return { ...state, isOpen: true, lastAdded: action.item };
+
     case "CLOSE_MODAL":
       return { ...state, isOpen: false };
+
     case "HYDRATE":
       return { ...state, items: action.items };
+
     default:
       return state;
   }
 }
 
-const initialState: CartState = {
-  items: [],
-  isOpen: false,
-  lastAdded: null,
-};
+const initialState: CartState = { items: [], isOpen: false, lastAdded: null };
 
 interface CartContextValue extends CartState {
+  hydrated: boolean;
   addItem: (product: Product, optionAbonnement?: AbonnementOption) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  updateOption: (productId: string, optionAbonnement: AbonnementOption) => void;
+  removeItem: (productId: string, optionAbonnement?: AbonnementOption) => void;
+  updateQuantity: (productId: string, quantity: number, optionAbonnement?: AbonnementOption) => void;
+  updateOption: (productId: string, fromOption: AbonnementOption | undefined, toOption: AbonnementOption) => void;
   clearCart: () => void;
-  openModal: (product: Product) => void;
+  openModal: (item: CartItem) => void;
   closeModal: () => void;
   totalItems: number;
   totalPrice: number;
@@ -121,19 +164,21 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem("tx-cart");
-      if (stored) {
-        dispatch({ type: "HYDRATE", items: JSON.parse(stored) });
-      }
+      if (stored) dispatch({ type: "HYDRATE", items: JSON.parse(stored) });
     } catch {}
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("tx-cart", JSON.stringify(state.items));
-  }, [state.items]);
+    if (hydrated) {
+      localStorage.setItem("tx-cart", JSON.stringify(state.items));
+    }
+  }, [state.items, hydrated]);
 
   const addItem = useCallback(
     (product: Product, optionAbonnement?: AbonnementOption) =>
@@ -141,29 +186,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
     []
   );
   const removeItem = useCallback(
-    (productId: string) => dispatch({ type: "REMOVE_ITEM", productId }),
+    (productId: string, optionAbonnement?: AbonnementOption) =>
+      dispatch({ type: "REMOVE_ITEM", productId, optionAbonnement }),
     []
   );
   const updateQuantity = useCallback(
-    (productId: string, quantity: number) =>
-      dispatch({ type: "UPDATE_QUANTITY", productId, quantity }),
+    (productId: string, quantity: number, optionAbonnement?: AbonnementOption) =>
+      dispatch({ type: "UPDATE_QUANTITY", productId, quantity, optionAbonnement }),
     []
   );
   const updateOption = useCallback(
-    (productId: string, optionAbonnement: AbonnementOption) =>
-      dispatch({ type: "UPDATE_OPTION", productId, optionAbonnement }),
+    (productId: string, fromOption: AbonnementOption | undefined, toOption: AbonnementOption) =>
+      dispatch({ type: "UPDATE_OPTION", productId, fromOption, toOption }),
     []
   );
   const clearCart = useCallback(() => dispatch({ type: "CLEAR_CART" }), []);
   const openModal = useCallback(
-    (product: Product) => dispatch({ type: "OPEN_MODAL", product }),
+    (item: CartItem) => dispatch({ type: "OPEN_MODAL", item }),
     []
   );
   const closeModal = useCallback(() => dispatch({ type: "CLOSE_MODAL" }), []);
 
   const totalItems = state.items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = state.items.reduce(
-    (sum, i) => sum + i.product.prix * i.quantity,
+    (sum, i) => sum + getItemPrice(i) * i.quantity,
     0
   );
 
@@ -171,6 +217,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     <CartContext.Provider
       value={{
         ...state,
+        hydrated,
         addItem,
         removeItem,
         updateQuantity,
