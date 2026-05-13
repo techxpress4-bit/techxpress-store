@@ -13,6 +13,8 @@ export default function LoginClient() {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("login");
   const [loading, setLoading] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
 
   // Login state
   const [loginData, setLoginData] = useState({ identifier: "", password: "" });
@@ -44,6 +46,25 @@ export default function LoginClient() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erreur de connexion";
       toast.error(msg === "Invalid login credentials" ? "Identifiants incorrects" : msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      });
+      if (error) throw error;
+      toast.success("Lien de réinitialisation envoyé ! Vérifiez votre boîte mail.");
+      setForgotMode(false);
+      setResetEmail("");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de l'envoi";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -132,13 +153,46 @@ export default function LoginClient() {
                 }`}
                 style={{ fontFamily: "var(--font-syne)" }}
               >
-                {t === "login" ? "Login" : "Créer un compte"}
+                {t === "login" ? "Se connecter" : "Créer un compte"}
               </button>
             ))}
           </div>
 
           <div className="p-8">
-            {tab === "login" ? (
+            {tab === "login" && forgotMode ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="mb-2">
+                  <h2 className="text-base font-bold text-white mb-1" style={{ fontFamily: "var(--font-syne)" }}>
+                    Mot de passe oublié
+                  </h2>
+                  <p className="text-xs text-[#6b7280]">
+                    Entrez votre adresse email pour recevoir un lien de réinitialisation.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    placeholder="votre@email.com"
+                    className="input-field"
+                    autoComplete="email"
+                    required
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                  />
+                </div>
+                <button type="submit" disabled={loading} className="btn-primary w-full justify-center">
+                  {loading ? "Envoi…" : "Envoyer le lien"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForgotMode(false)}
+                  className="w-full text-center text-xs text-[#6b7280] hover:text-[#9ca3af] transition-colors py-1"
+                >
+                  ← Retour à la connexion
+                </button>
+              </form>
+            ) : tab === "login" ? (
               <form onSubmit={handleLogin} className="space-y-4">
                 {/* Google */}
                 <button
@@ -201,9 +255,13 @@ export default function LoginClient() {
                     />
                     Se souvenir de moi
                   </label>
-                  <a href="#" className="text-[#8b5fc0] hover:text-[#c084fc] transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => { setResetEmail(loginData.identifier); setForgotMode(true); }}
+                    className="text-[#8b5fc0] hover:text-[#c084fc] transition-colors"
+                  >
                     Mot de passe oublié ?
-                  </a>
+                  </button>
                 </div>
 
                 <button
@@ -369,14 +427,12 @@ export default function LoginClient() {
 
         {/* Admin access */}
         <div className="mt-4 text-center">
-          <a
-            href="https://techxpress-dz.sanity.studio"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/studio"
             className="text-xs text-[#4b5563] hover:text-[#6b7280] transition-colors"
           >
             Accès administration →
-          </a>
+          </Link>
         </div>
       </div>
     </div>

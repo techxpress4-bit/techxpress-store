@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { wilayas } from "@/lib/wilayas";
 import type { AbonnementOption } from "@/lib/types";
+import { getItemPrice } from "@/lib/types";
 import toast from "react-hot-toast";
 
 const abonnementLabels: Record<AbonnementOption, string> = {
@@ -46,16 +48,18 @@ export default function CommanderClient() {
 
       if (!res.ok) throw new Error("Erreur serveur");
 
+      const { orderRef } = await res.json();
+
       if (typeof window !== "undefined" && (window as any).gtag) {
         (window as any).gtag("event", "purchase", {
           currency: "DZD",
           value: totalPrice,
-          transaction_id: `TX-${Date.now()}`,
+          transaction_id: orderRef,
         });
       }
 
       clearCart();
-      router.push("/confirmation");
+      router.push(`/confirmation?ref=${orderRef}`);
     } catch (err) {
       toast.error("Une erreur est survenue. Veuillez réessayer.");
     } finally {
@@ -70,9 +74,9 @@ export default function CommanderClient() {
           <h1 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: "var(--font-syne)" }}>
             Votre panier est vide
           </h1>
-          <a href="/catalogue" className="btn-primary mt-4">
+          <Link href="/catalogue" className="btn-primary mt-4">
             Explorer le catalogue
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -238,7 +242,7 @@ export default function CommanderClient() {
                       <p className="text-[#6b7280] text-xs">Qté : {item.quantity}</p>
                     </div>
                     <span className="text-white text-sm flex-shrink-0 font-semibold">
-                      {(item.product.prix * item.quantity).toLocaleString("fr-DZ")} DA
+                      {(getItemPrice(item) * item.quantity).toLocaleString("fr-DZ")} DA
                     </span>
                   </div>
                 ))}

@@ -24,6 +24,12 @@ export default function AccountClient({ user, profile }: Props) {
   const supabase = createClient();
   const [newsletter, setNewsletter] = useState(profile?.newsletter_opt_in ?? true);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    prenom: profile?.prenom ?? "",
+    nom: profile?.nom ?? "",
+    telephone: profile?.telephone ?? "",
+  });
 
   const displayName = profile?.prenom
     ? `${profile.prenom}${profile.nom ? " " + profile.nom : ""}`
@@ -44,6 +50,28 @@ export default function AccountClient({ user, profile }: Props) {
       setNewsletter(!next);
     } else {
       toast.success(next ? "Abonné aux offres TechXpress" : "Désabonné des offres");
+    }
+    setSaving(false);
+  }
+
+  async function handleProfileSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        prenom: editForm.prenom,
+        nom: editForm.nom,
+        telephone: editForm.telephone,
+      })
+      .eq("id", user.id);
+    if (error) {
+      toast.error("Erreur lors de la sauvegarde");
+    } else {
+      await supabase.auth.updateUser({ data: { prenom: editForm.prenom, nom: editForm.nom } });
+      toast.success("Profil mis à jour !");
+      setEditing(false);
+      router.refresh();
     }
     setSaving(false);
   }
@@ -75,22 +103,84 @@ export default function AccountClient({ user, profile }: Props) {
         <div className="space-y-4">
           {/* Profile info */}
           <div className="card p-6">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#9ca3af] mb-5" style={{ fontFamily: "var(--font-syne)" }}>
-              Informations
-            </h2>
-            <dl className="space-y-4">
-              {[
-                { label: "Prénom", value: profile?.prenom || "—" },
-                { label: "Nom", value: profile?.nom || "—" },
-                { label: "Téléphone", value: profile?.telephone || "—" },
-                { label: "Email", value: user.email || "—" },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between py-2 border-b border-[#1f1f1f] last:border-0">
-                  <dt className="text-xs text-[#6b7280] font-medium w-28">{label}</dt>
-                  <dd className="text-sm text-[#f5f5f5] text-right">{value}</dd>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#9ca3af]" style={{ fontFamily: "var(--font-syne)" }}>
+                Informations
+              </h2>
+              {!editing && (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="text-xs px-3 py-1.5 rounded-lg transition-all"
+                  style={{ color: "var(--violet-light)", border: "1px solid rgba(107,63,160,0.25)", background: "rgba(107,63,160,0.06)" }}
+                >
+                  Modifier
+                </button>
+              )}
+            </div>
+
+            {editing ? (
+              <form onSubmit={handleProfileSave} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Prénom</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={editForm.prenom}
+                      onChange={(e) => setEditForm((p) => ({ ...p, prenom: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Nom</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={editForm.nom}
+                      onChange={(e) => setEditForm((p) => ({ ...p, nom: e.target.value }))}
+                    />
+                  </div>
                 </div>
-              ))}
-            </dl>
+                <div>
+                  <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Téléphone</label>
+                  <input
+                    type="tel"
+                    className="input-field"
+                    value={editForm.telephone}
+                    onChange={(e) => setEditForm((p) => ({ ...p, telephone: e.target.value }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-[#1f1f1f]">
+                  <dt className="text-xs text-[#6b7280] font-medium">Email</dt>
+                  <dd className="text-sm text-[#f5f5f5]">{user.email || "—"}</dd>
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center text-sm py-2">
+                    {saving ? "Sauvegarde…" : "Enregistrer"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setEditing(false); setEditForm({ prenom: profile?.prenom ?? "", nom: profile?.nom ?? "", telephone: profile?.telephone ?? "" }); }}
+                    className="btn-secondary flex-1 justify-center text-sm py-2"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <dl className="space-y-4">
+                {[
+                  { label: "Prénom", value: profile?.prenom || "—" },
+                  { label: "Nom", value: profile?.nom || "—" },
+                  { label: "Téléphone", value: profile?.telephone || "—" },
+                  { label: "Email", value: user.email || "—" },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-center justify-between py-2 border-b border-[#1f1f1f] last:border-0">
+                    <dt className="text-xs text-[#6b7280] font-medium w-28">{label}</dt>
+                    <dd className="text-sm text-[#f5f5f5] text-right">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </div>
 
           {/* Newsletter */}
@@ -121,6 +211,17 @@ export default function AccountClient({ user, profile }: Props) {
             <h2 className="text-sm font-bold uppercase tracking-wider text-[#9ca3af] mb-4" style={{ fontFamily: "var(--font-syne)" }}>
               Mon espace
             </h2>
+            <Link href="/mes-commandes" className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-[#1f1f1f] transition-colors group">
+              <div className="flex items-center gap-3 text-sm text-[#9ca3af] group-hover:text-white">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+                </svg>
+                Mes commandes
+              </div>
+              <svg className="w-4 h-4 text-[#4b5563] group-hover:text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
             <Link href="/panier" className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-[#1f1f1f] transition-colors group">
               <div className="flex items-center gap-3 text-sm text-[#9ca3af] group-hover:text-white">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

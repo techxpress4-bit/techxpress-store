@@ -3,10 +3,18 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-export default function ContactClient() {
+interface Props {
+  instagram?: string;
+  tiktok?: string;
+}
+
+export default function ContactClient({ instagram, tiktok }: Props) {
   const [form, setForm] = useState({ nom: "", email: "", telephone: "", message: "" });
   const [loading, setLoading] = useState(false);
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") || "";
+
+  const instagramUrl = instagram || "https://www.instagram.com/dztechxpress";
+  const tiktokUrl = tiktok || "https://www.tiktok.com/@techxpress23";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -78,7 +86,7 @@ export default function ContactClient() {
 
           {/* Instagram */}
           <a
-            href="https://www.instagram.com/dztechxpress?igsh=dTJxdnFueGg0Y3E5&utm_source=qr"
+            href={instagramUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 flex items-center gap-4 p-4 rounded-2xl transition-all group"
@@ -103,7 +111,7 @@ export default function ContactClient() {
 
           {/* TikTok */}
           <a
-            href="https://www.tiktok.com/@techxpress23?is_from_webapp=1&sender_device=pc"
+            href={tiktokUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 flex items-center gap-4 p-4 rounded-2xl transition-all group"

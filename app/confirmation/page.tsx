@@ -1,15 +1,19 @@
 import { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "Commande confirmée",
-};
+export const metadata: Metadata = { title: "Commande confirmée" };
 
-export default function ConfirmationPage() {
+interface Props {
+  searchParams: Promise<{ ref?: string }>;
+}
+
+export default async function ConfirmationPage({ searchParams }: Props) {
+  const { ref } = await searchParams;
+
   return (
     <div className="pt-28 pb-20 min-h-screen flex items-center justify-center">
       <div className="max-w-lg mx-auto px-4 text-center">
-        {/* Success animation */}
+        {/* Success icon */}
         <div className="relative mb-8 mx-auto w-fit">
           <div
             className="w-24 h-24 rounded-full flex items-center justify-center mx-auto animate-pulse-glow"
@@ -18,14 +22,7 @@ export default function ConfirmationPage() {
               border: "2px solid rgba(107,63,160,0.5)",
             }}
           >
-            <svg
-              className="w-12 h-12"
-              style={{ color: "var(--violet-light)" }}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
+            <svg className="w-12 h-12" style={{ color: "var(--violet-light)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -36,19 +33,26 @@ export default function ConfirmationPage() {
           </div>
         </div>
 
-        <h1
-          className="text-3xl md:text-4xl font-extrabold text-white mb-4"
-          style={{ fontFamily: "var(--font-syne)" }}
-        >
+        <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-4" style={{ fontFamily: "var(--font-syne)" }}>
           Commande reçue !
         </h1>
 
+        {/* Order ref */}
+        {ref && (
+          <div
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-mono mb-6"
+            style={{ background: "rgba(107,63,160,0.12)", border: "1px solid rgba(107,63,160,0.3)", color: "#c084fc" }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Référence : <strong className="text-white">{ref}</strong>
+          </div>
+        )}
+
         <div
           className="p-5 rounded-2xl mb-8 text-left"
-          style={{
-            background: "rgba(107,63,160,0.08)",
-            border: "1px solid rgba(107,63,160,0.25)",
-          }}
+          style={{ background: "rgba(107,63,160,0.08)", border: "1px solid rgba(107,63,160,0.25)" }}
         >
           <p className="text-[#f5f5f5] text-sm leading-relaxed">
             Votre commande a bien été reçue. Notre équipe vous contactera sous{" "}
