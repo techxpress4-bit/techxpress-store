@@ -1,11 +1,12 @@
-# Tech Xpress — Boutique en ligne
+# TechXpressDZ — Boutique en ligne
 
 Boutique e-commerce premium pour produits électroniques en Algérie.
-Stack : **Next.js 15** + **Sanity CMS** + **Cloudflare Pages** + **Resend**
+
+**Stack :** Next.js 15 · Sanity CMS · Supabase Auth · Cloudflare Workers · Resend
 
 ---
 
-## Configuration initiale
+## Démarrage rapide
 
 ### 1. Installer les dépendances
 
@@ -13,129 +14,69 @@ Stack : **Next.js 15** + **Sanity CMS** + **Cloudflare Pages** + **Resend**
 npm install
 ```
 
-### 2. Configurer les variables d'environnement
+### 2. Variables d'environnement
 
 ```bash
 cp .env.example .env.local
 ```
 
-Remplir `.env.local` avec vos vraies valeurs :
+| Variable | Description | Où l'obtenir |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL du projet Supabase | supabase.com/dashboard |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé publique Supabase | supabase.com/dashboard → API |
+| `NEXT_PUBLIC_SANITY_PROJECT_ID` | ID du projet Sanity | sanity.io/manage |
+| `NEXT_PUBLIC_SANITY_DATASET` | Dataset Sanity | `production` |
+| `SANITY_API_TOKEN` | Token lecture Sanity | Sanity → API → Tokens (Viewer) |
+| `SANITY_WRITE_TOKEN` | Token écriture Sanity | Sanity → API → Tokens (Editor) |
+| `SANITY_REVALIDATE_SECRET` | Secret webhook revalidation | Chaîne aléatoire longue |
+| `RESEND_API_KEY` | Clé API envoi emails | resend.com |
+| `RESEND_TO_EMAIL` | Email réception commandes | Votre email |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Numéro WhatsApp | Format : `213XXXXXXXXX` |
+| `NEXT_PUBLIC_SITE_URL` | URL de production | `https://techxpressdz.com` |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics 4 | analytics.google.com |
 
-| Variable | Où l'obtenir |
-|---|---|
-| `NEXT_PUBLIC_SANITY_PROJECT_ID` | [sanity.io/manage](https://sanity.io/manage) |
-| `SANITY_API_TOKEN` | Sanity > API > Tokens (permission **Editor**) |
-| `RESEND_API_KEY` | [resend.com](https://resend.com) |
-| `RESEND_TO_EMAIL` | Votre email pour recevoir les commandes |
-| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Format : `213XXXXXXXXX` (sans +) |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics 4 |
-| `NEXT_PUBLIC_GTM_ID` | Google Tag Manager |
-
-### 3. Créer un projet Sanity
-
-```bash
-npx sanity@latest init --project techxpress --dataset production --template clean
-```
-
-Ou créez-le sur [sanity.io/manage](https://sanity.io/manage) et copiez le Project ID.
-
-### 4. Peupler la base de données (16 Box TV)
-
-```bash
-npm run seed
-```
-
-Ce script crée automatiquement :
-- 7 catégories (Box TV, Abonnements, Accessoires, Routeurs, Câbles, Supports, Paraboles)
-- 16 produits Box TV Android avec prix et fiches techniques
-
-### 5. Ajouter les photos via Sanity Studio
+### 3. Lancer en développement
 
 ```bash
 npm run dev
-# Ouvrir http://localhost:3000/studio
+# → http://localhost:3000
+# → http://localhost:3000/studio (Sanity Studio)
 ```
-
-Dans le Studio : chaque produit > champ Photos > Upload.
 
 ---
 
-## Démarrage en développement
+## Déploiement sur Cloudflare Workers
 
 ```bash
-npm run dev
+# 1. Build pour Cloudflare
+npm run build:cloudflare
+
+# 2. Déployer
+npm run deploy
 ```
 
-Ouvrir [http://localhost:3000](http://localhost:3000)
-
-**Studio Sanity** : [http://localhost:3000/studio](http://localhost:3000/studio)
-
----
-
-## Déploiement sur Cloudflare Pages
-
-### Option 1 : Via GitHub (recommandé)
-
-1. Pousser le code sur GitHub
-2. [Cloudflare Dashboard](https://dash.cloudflare.com) → Pages → **Create a project** → **Connect to Git**
-3. Sélectionner votre dépôt GitHub
-4. Configurer le build :
-
-| Paramètre | Valeur |
-|---|---|
-| **Framework preset** | None (Custom) |
-| **Build command** | `npx @opennextjs/cloudflare` |
-| **Build output directory** | `.open-next/assets` |
-| **Node.js version** | `20.x` |
-
-5. Ajouter toutes les variables d'environnement dans :
-   **Settings → Environment variables**
-
-### Option 2 : Deploy manuel
-
-```bash
-# Build pour Cloudflare
-npx @opennextjs/cloudflare
-
-# Déployer
-npx wrangler pages deploy
-```
+> ⚠️ **Important** : toujours lancer `build:cloudflare` avant `deploy`.  
+> Le simple `deploy` sans build redéploie les anciens assets.
 
 ### Variables d'environnement sur Cloudflare
 
-Dans **Pages → votre projet → Settings → Environment variables**, ajouter :
-
-```
-NEXT_PUBLIC_SANITY_PROJECT_ID    = votre-id
-NEXT_PUBLIC_SANITY_DATASET       = production
-SANITY_API_TOKEN                 = votre-token
-RESEND_API_KEY                   = re_xxx
-RESEND_TO_EMAIL                  = votre@email.com
-NEXT_PUBLIC_WHATSAPP_NUMBER      = 213XXXXXXXXX
-NEXT_PUBLIC_GA_MEASUREMENT_ID    = G-XXXXXXXXXX
-NEXT_PUBLIC_GTM_ID               = GTM-XXXXXXX
-```
+Dans **Cloudflare Dashboard → Workers → techxpress → Settings → Variables**, ajouter toutes les variables du tableau ci-dessus (sans les préfixes `NEXT_PUBLIC_`pour les variables serveur).
 
 ---
 
-## Gestion du catalogue
+## Webhook Sanity (mise à jour instantanée)
 
-Tout le catalogue se gère via **Sanity Studio** à `/studio` :
+Le site se met à jour **en temps réel** dès qu'une publication est faite dans Sanity grâce à un webhook.
 
-### Ajouter un produit
-1. Ouvrir `/studio`
-2. **Produits** → **+ Nouveau produit**
-3. Remplir : Nom, Catégorie, Photos, Prix, Stock
-4. Publier ✅
+**Configuration dans Sanity** (sanity.io/manage → API → Webhooks) :
 
-### Champs importants
-
-| Champ | Description |
+| Champ | Valeur |
 |---|---|
-| **En stock** | Affiche "En stock" ou "Rupture de stock" |
-| **Option abonnement** | Pour Box TV : affiche le choix Box seule / Box + Abonnement |
-| **Produit vedette** | Apparaît sur la page d'accueil |
-| **Fiche technique** | Tableau de spécifications (ex: RAM: 2 Go) |
+| URL | `https://techxpressdz.com/api/revalidate?secret=VOTRE_SECRET` |
+| HTTP Method | POST |
+| Trigger on | Create · Update · Delete |
+| Header Name | `Content-Type` |
+| Header Value | `application/json` |
 
 ---
 
@@ -143,86 +84,101 @@ Tout le catalogue se gère via **Sanity Studio** à `/studio` :
 
 ```
 boutique-store/
-├── app/                    # Pages Next.js 15 App Router
-│   ├── page.tsx            # Accueil
-│   ├── catalogue/          # Catalogue + filtres par catégorie
-│   ├── produit/[slug]/     # Fiche produit détaillée
-│   ├── panier/             # Panier d'achat
-│   ├── commander/          # Formulaire de commande
-│   ├── confirmation/       # Page de confirmation
-│   ├── contact/            # Page contact
-│   ├── studio/             # Sanity Studio embarqué
-│   └── api/commande/       # API route envoi email (Resend)
-├── components/             # Composants réutilisables
-│   ├── Navbar.tsx
-│   ├── Footer.tsx
-│   ├── ProductCard.tsx
-│   ├── CartModal.tsx       # Popup "Continuer / Voir le panier"
-│   ├── WhatsAppButton.tsx  # Bouton flottant WhatsApp
-│   ├── CookieBanner.tsx    # Bannière RGPD
-│   └── Analytics.tsx       # Tracking GA4
-├── context/CartContext.tsx # État panier (localStorage)
+├── app/
+│   ├── page.tsx                  # Accueil
+│   ├── catalogue/                # Catalogue + filtres catégorie
+│   ├── produit/[slug]/           # Fiche produit + SEO
+│   ├── panier/                   # Panier
+│   ├── commander/                # Formulaire commande
+│   ├── confirmation/             # Page confirmation
+│   ├── contact/                  # Formulaire contact
+│   ├── login/                    # Connexion / Inscription
+│   ├── account/                  # Espace compte utilisateur
+│   ├── mes-commandes/            # Historique commandes
+│   ├── studio/                   # Sanity Studio embarqué
+│   ├── auth/callback/            # Callback OAuth (Google)
+│   ├── sitemap.xml               # Sitemap dynamique
+│   ├── robots.txt                # Robots
+│   └── api/
+│       ├── commande/             # Traitement commandes + stock
+│       └── revalidate/           # Webhook revalidation Sanity
+├── components/
+│   ├── Navbar.tsx                # Barre de navigation + dropdown user
+│   ├── Footer.tsx                # Pied de page (données Sanity)
+│   ├── Banniere.tsx              # Bandeau annonce (données Sanity)
+│   ├── ProductCard.tsx           # Carte produit
+│   ├── ProductCarousel.tsx       # Carousel Best Sellers
+│   ├── CategoryCarousel.tsx      # Carousel catégories
+│   ├── CartModal.tsx             # Modal panier
+│   ├── WhatsAppButton.tsx        # Bouton flottant WhatsApp
+│   ├── CookieBanner.tsx          # Bannière RGPD
+│   └── Analytics.tsx             # Tracking GA4
+├── context/CartContext.tsx        # État panier (localStorage)
 ├── lib/
-│   ├── sanity.ts           # Client Sanity + urlFor
-│   ├── queries.ts          # Requêtes GROQ
-│   ├── types.ts            # Types TypeScript
-│   └── wilayas.ts          # 58 wilayas d'Algérie
+│   ├── sanity.ts                 # Client Sanity (lecture + écriture)
+│   ├── queries.ts                # Requêtes GROQ
+│   ├── types.ts                  # Types TypeScript + helpers prix
+│   └── wilayas.ts                # 58 wilayas d'Algérie
 ├── sanity/
-│   ├── schemas/            # Schémas Sanity (product, category)
-│   └── seed/seedProducts.ts # Script de seed (16 Box TV)
-├── public/logo.png         # À déposer manuellement
-├── sanity.config.ts        # Configuration Sanity Studio
-├── wrangler.toml           # Configuration Cloudflare Pages
-├── open-next.config.ts     # Adaptateur OpenNext Cloudflare
-└── .env.local              # Variables d'environnement (ne pas commiter)
+│   └── schemas/                  # Schémas : product, category, settings
+├── sanity.config.ts              # Configuration Sanity Studio
+├── wrangler.toml                 # Configuration Cloudflare Workers
+└── open-next.config.ts           # Adaptateur OpenNext Cloudflare
 ```
 
 ---
 
-## Logo
+## Fonctionnalités
 
-Déposer le fichier logo à : `public/logo.png`
+### Catalogue & Produits
+- Filtrage par catégorie, tri par ordre personnalisable
+- Prix promotionnel avec date d'expiration automatique
+- Option Box seule / Box + Abonnement TV
+- Badge "Nouveau", badge "Promo"
+- Fiche technique structurée
+- SEO : `metaTitre`, `metaDescription`, JSON-LD Product schema
 
-Le monogramme **TX** (vert algérien + rouge) est utilisé comme fallback automatique si `logo.png` n'est pas présent.
+### Compte utilisateur
+- Connexion email/mot de passe + Google OAuth
+- Réinitialisation de mot de passe par email
+- Modification du profil (prénom, nom, téléphone)
+- Historique des commandes
+- Menu déroulant au survol du nom dans la navbar
 
----
+### Commandes
+- Formulaire livraison (58 wilayas)
+- Paiement à la livraison uniquement (COD)
+- Email automatique via Resend
+- Décrémentation automatique du stock dans Sanity
+- Sauvegarde en base Supabase
 
-## Analytics GA4 — Événements trackés
-
-| Événement | Déclencheur |
-|---|---|
-| `page_view` | Chaque changement de page |
-| `product_click` | Clic sur une fiche produit |
-| `add_to_cart` | Clic "Ajouter au panier" |
-| `begin_checkout` | Arrivée sur /commander |
-| `purchase` | Formulaire de commande envoyé |
-| `whatsapp_click` | Clic bouton WhatsApp |
-
-> GA4 ne se charge que si l'utilisateur **accepte** les cookies.
+### Administration (Sanity Studio — `/studio`)
+- Singleton "Paramètres" : bannière, réseaux sociaux, téléphone, email
+- Vue catégorie → produits associés
+- Filtre "Sans photos" pour détecter les produits incomplets
+- Validation unicité slug en temps réel
+- Mise à jour instantanée du site via webhook
 
 ---
 
 ## Paiement
 
-**Aucun paiement en ligne** — Le site est une vitrine e-commerce.
-Le processus :
-1. Client commande en ligne
-2. Reçoit confirmation automatique
-3. L'équipe Tech Xpress appelle sous 24h
-4. Livraison + paiement à la réception (COD)
+**Aucun paiement en ligne** — processus COD :
+1. Client passe commande en ligne
+2. Email automatique reçu
+3. L'équipe TechXpress appelle sous 24h
+4. Livraison + paiement à la réception
 
 ---
 
-## Commandes reçues par email
+## Analytics GA4
 
-L'email de commande (via Resend) inclut :
-- Nom, prénom, téléphone, wilaya, adresse
-- Liste des produits + options abonnement + quantités
-- Total en DA
-- Message optionnel
+| Événement | Déclencheur |
+|---|---|
+| `page_view` | Chaque changement de page |
+| `add_to_cart` | Clic "Ajouter au panier" |
+| `begin_checkout` | Arrivée sur /commander |
+| `purchase` | Commande validée |
+| `whatsapp_click` | Clic bouton WhatsApp |
 
----
-
-## Support
-
-Pour toute question technique, ouvrir une issue ou contacter via WhatsApp.
+> GA4 ne se charge que si l'utilisateur **accepte** les cookies.

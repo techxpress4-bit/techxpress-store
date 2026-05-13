@@ -1,63 +1,94 @@
-# TechXpress — To-Do List
-_Dernière mise à jour : 2026-05-12_
+# TODO — TechXpressDZ
+_Dernière mise à jour : 2026-05-13_
 
-## ✅ Fait dans cette session (2026-05-12)
-- [x] Scaffold complet Next.js 15 + Sanity + Cloudflare + Resend
+---
+
+## ✅ Réalisé
+
+### Session 1 (2026-05-12) — Scaffold initial
+- [x] Next.js 15 + Sanity + Cloudflare Workers + Resend + Supabase Auth
 - [x] Seed Sanity (7 catégories + 16 produits Box TV)
-- [x] Navbar : Login, Mon Panier, Instagram, TikTok, responsive
+- [x] Navbar responsive : Login, Panier, Instagram, TikTok
 - [x] WhatsApp button flottant animé
-- [x] Page Login avec onglets Login / Créer un compte + Google OAuth
-- [x] Intégration Supabase Auth (email/password + Google)
-- [x] Badge panier redesigné (absolu, propre)
-- [x] Fix chiffres (font-variant-numeric: lining-nums tabular-nums)
-- [x] Polices Outfit + Inter via next/font/google
-- [x] Hero features blocks agrandis
-- [x] ProductCard hover lift + violet glow
-- [x] Skeleton loading (Sanity fetch)
-- [x] Contact page spacing cohérent
-- [x] Badges Nouveau / Promo sur produits
+- [x] Page Login : onglets + Google OAuth
+- [x] Polices Outfit + Inter, design system dark violet
+- [x] ProductCard hover lift + violet glow, badges Nouveau/Promo
 - [x] Page Mon Compte (/account)
-- [x] Footer refresh visuel
-- [x] Fil d'Ariane (catalogue / produit)
-- [x] CTA Commander plus visible sur fiches produit
-- [x] État d'erreur si Sanity est down
+- [x] Footer, fil d'Ariane, CookieBanner RGPD, Analytics GA4
+
+### Session 2 (2026-05-13) — Fonctionnalités & UX
+
+#### Librairie & Infrastructure
+- [x] Types TypeScript étendus (marque, metaTitre, metaDescription, dateFinPromo, ordre, image catégorie)
+- [x] `isPromoActive()` — vérification date expiration promo
+- [x] `getItemPrice()` — prix correct selon promo active + option abonnement
+- [x] `writeClient` Sanity pour mutations (décrémentation stock)
+- [x] `settingsQuery` — paramètres globaux depuis Sanity
+- [x] Filtre `publicFilter` (bloque brouillons/archivés sur toutes les requêtes)
+- [x] Tri `coalesce(ordre, 999999)` sur toutes les listes
+- [x] Cache fallback réduit 300s → 60s
+- [x] Webhook `/api/revalidate` — mise à jour instantanée à la publication Sanity
+
+#### Sanity Studio
+- [x] Singleton "Paramètres" (bannière, réseaux sociaux, téléphone, email)
+- [x] Validation unicité slug en temps réel
+- [x] Champs `dateFinPromo`, `ordre`, warning photos manquantes
+- [x] Drill-down catégorie → produits associés
+- [x] Filtre "Sans photos" dans la vue Produits
+- [x] visionTool uniquement en développement
+
+#### Layout & Navigation
+- [x] Bannière d'annonce pilotée par Sanity (texte + lien optionnel)
+- [x] CSS variable `--banner-h` pour décalage automatique navbar
+- [x] Navbar : dropdown hover sur nom utilisateur (Mon compte, Mes commandes, Se déconnecter)
+- [x] Footer async : réseaux sociaux et téléphone depuis Sanity
+- [x] Headers sections agrandis (text-2xl/3xl responsive)
+
+#### Catalogue
+- [x] CategoryCarousel : image Sanity, icône conditionnelle, hauteur fixe 120px
+- [x] ProductCard : prix promo avec `isPromoActive()`, badge Nouveau
+
+#### Page Produit
+- [x] SEO : `metaTitre` et `metaDescription` personnalisés
+- [x] JSON-LD Product schema complet (marque, prix, disponibilité, breadcrumb)
+- [x] Prix promo avec date d'expiration affichée
+
+#### Panier & Commande
+- [x] Confirmation deux étapes pour "Vider le panier"
+- [x] API commande : sauvegarde Supabase + décrémentation stock Sanity
+- [x] `totalPrice` et affichage utilisent `getItemPrice()`
+
+#### Compte Utilisateur
+- [x] Réinitialisation mot de passe par email (Supabase)
+- [x] Profil modifiable (prénom, nom, téléphone)
+- [x] Historique commandes avec prix corrects
+- [x] Contact : liens sociaux depuis Sanity
+
+#### SEO & Routing
+- [x] `sitemap.xml` dynamique
+- [x] `robots.txt`
+- [x] Page 404 personnalisée
+
+---
 
 ## 🔲 Reste à faire
 
-### Auth & Compte
-- [ ] SQL Supabase : créer table `profiles` + trigger (script dans le chat)
-- [ ] Page /account : historique commandes, infos perso éditables, gestion newsletter
-- [ ] Mot de passe oublié (Supabase reset password flow)
-- [ ] Protéger /account avec middleware redirect si non connecté
+### 🔴 Priorité haute
+- [ ] **Pagination catalogue** — indispensable à partir de ~200 produits pour les performances
+- [ ] **Actions utilisateur sur mobile** — le dropdown navbar n'est visible qu'en desktop, ajouter Mes commandes / Se déconnecter dans le menu hamburger
+- [ ] **Statut commande (admin)** — permettre à l'équipe de changer le statut d'une commande (en attente → confirmée → expédiée → livrée) sans accéder à Supabase directement
 
-### Catalogue & Produits
-- [ ] Barre de recherche produits (filtre client-side ou Sanity GROQ)
-- [ ] Filtre par prix / disponibilité dans le catalogue
-- [ ] Page produit : galerie d'images multiples
-- [ ] Vérifier responsive page panier sur mobile
+### 🟡 Priorité moyenne
+- [ ] **Recherche produits** — barre de recherche dans le catalogue (GROQ `match`)
+- [ ] **Zoom image produit** — clic sur photo → lightbox plein écran
+- [ ] **Produits similaires** — section "Vous aimerez aussi" en bas de fiche (même catégorie)
+- [ ] **Galerie multi-images** — carousel swipeable sur la fiche produit
 
-### Conversion
-- [ ] Section avis clients / social proof (homepage + fiches produit)
-- [ ] Upsell / produits similaires en bas de fiche produit
-- [ ] Page de confirmation de commande après checkout
-
-### Email (Resend)
-- [ ] Configurer RESEND_API_KEY + RESEND_TO_EMAIL dans .env.local
-- [ ] Email de confirmation commande client
-- [ ] Email de notification commande admin
-
-### Déploiement
-- [ ] Configurer domaine custom sur Cloudflare Pages
-- [ ] Variables d'env sur Cloudflare (dashboard ou wrangler.toml secrets)
-- [ ] `npm run build:cloudflare` → vérifier 0 erreur
-- [ ] Google OAuth : ajouter l'URL de prod dans Google Cloud Console redirect URIs
-- [ ] Activer Google Provider dans Supabase avec vraies clés Google Cloud
-
-### Analytics
-- [ ] Renseigner NEXT_PUBLIC_GA_MEASUREMENT_ID
-- [ ] Renseigner NEXT_PUBLIC_GTM_ID
-
-### SEO
-- [ ] Metadata dynamique sur pages produit (titre, description, og:image)
-- [ ] sitemap.xml dynamique
-- [ ] robots.txt
+### 🟢 Priorité basse
+- [ ] **Tableau de bord commandes** — page `/admin/commandes` intégrée au site
+- [ ] **Export CSV commandes** — pour la comptabilité
+- [ ] **Avis clients** — système notation / commentaires
+- [ ] **Wishlist** — sauvegarder des produits favoris
+- [ ] **Newsletter** — intégration Resend Audiences
+- [ ] **Déploiement WSL** — le build affiche un warning Windows, builder depuis WSL pour fiabilité maximale
+- [ ] **Mise à jour `compatibility_date`** dans `wrangler.toml` à chaque trimestre
