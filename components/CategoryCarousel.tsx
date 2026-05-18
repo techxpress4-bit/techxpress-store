@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Category } from "@/lib/types";
 
 const categoryMeta: Record<string, { icon: string; gradient: string; accent: string }> = {
@@ -119,21 +120,39 @@ export default function CategoryCarousel({ categories }: Props) {
                 minHeight: "8rem",
               }}
             >
-              <div className="absolute inset-0 transition-opacity duration-300"
-                style={{ background: `linear-gradient(${meta.gradient})` }} />
+              {/* Background: image Sanity ou gradient */}
+              {cat.image?.asset?.url ? (
+                <Image
+                  src={cat.image.asset.url}
+                  alt={cat.image.alt || cat.nom}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 640px) 160px, 200px"
+                />
+              ) : (
+                <div className="absolute inset-0 transition-opacity duration-300"
+                  style={{ background: `linear-gradient(${meta.gradient})` }} />
+              )}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 style={{ background: "rgba(255,255,255,0.05)" }} />
               <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 style={{ boxShadow: `inset 0 0 0 1px ${meta.accent}55` }} />
-              <div className="absolute bottom-0 left-0 right-0 h-1/2 pointer-events-none"
-                style={{ background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)" }} />
+              {/* Veil overlay for readability */}
+              {cat.image?.asset?.url && (
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{ background: "rgba(0,0,0,0.30)" }} />
+              )}
+              <div className="absolute bottom-0 left-0 right-0 h-2/3 pointer-events-none"
+                style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)" }} />
 
-              <div className="relative z-10 flex flex-col items-center justify-center py-7 px-3 text-center gap-2.5">
-                <span className="text-4xl transition-transform duration-300 group-hover:scale-110 drop-shadow-lg">
-                  {cat.icone || meta.icon}
-                </span>
-                <p className="text-xs font-bold text-white leading-tight"
-                  style={{ fontFamily: "var(--font-syne)", textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}>
+              <div className="relative z-10 flex flex-col items-center justify-center h-full py-3 px-3 text-center gap-1.5" style={{ minHeight: "8rem" }}>
+                {!cat.image?.asset?.url && (
+                  <span className="text-4xl transition-transform duration-300 group-hover:scale-110 drop-shadow-lg w-full text-center">
+                    {cat.icone || meta.icon}
+                  </span>
+                )}
+                <p className="text-xs font-bold text-white leading-tight w-full text-center"
+                  style={{ fontFamily: "var(--font-syne)", textShadow: "0 2px 10px rgba(0,0,0,1)" }}>
                   {cat.nom}
                 </p>
               </div>

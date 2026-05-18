@@ -1,6 +1,7 @@
 export const allCategoriesQuery = `
   *[_type == "category"] | order(ordre asc) {
-    _id, nom, slug, icone, description, ordre
+    _id, nom, slug, icone, description, ordre,
+    image { asset->{ _id, url }, alt }
   }
 `;
 

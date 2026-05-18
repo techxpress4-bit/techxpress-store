@@ -75,7 +75,7 @@ export default function AddToCartSection({ product }: Props) {
                 </span>
                 <span className="text-sm font-semibold text-white">Box + Abonnement TV</span>
               </div>
-              <p className="text-xs text-[#6b7280] ml-6">Abonnement IPTV inclus</p>
+              <p className="text-xs text-[#6b7280] ml-6">Abonnement TV 12 mois inclus</p>
             </button>
           </div>
         </div>
@@ -86,58 +86,17 @@ export default function AddToCartSection({ product }: Props) {
         onClick={handleAddToCart}
         disabled={!product.enStock}
         className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-200 ${
-          product.enStock ? "hover:scale-[1.02] active:scale-[0.99]" : "opacity-40 cursor-not-allowed"
+          product.enStock
+            ? "btn-primary hover:scale-[1.02]"
+            : "opacity-40 cursor-not-allowed bg-[#2a2a2a] text-[#6b7280]"
         }`}
-        style={product.enStock ? {
-          background: "linear-gradient(135deg, var(--violet) 0%, var(--violet-dark) 100%)",
-          boxShadow: "0 8px 30px rgba(107,63,160,0.45)",
-          color: "white",
-          fontSize: "1rem",
-          letterSpacing: "0.01em",
-        } : {
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          color: "var(--text-muted)",
-        }}
+        style={product.enStock ? {} : { background: "var(--surface)", border: "1px solid var(--border)" }}
       >
-        {product.enStock ? (
-          <>
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-            Ajouter au panier
-          </>
-        ) : (
-          <>
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Rupture de stock
-          </>
-        )}
-      </button>
-
-      {/* Commander directement */}
-      {product.enStock && (
-        <a
-          href="/commander"
-          className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#1f1f1f]"
-          style={{ border: "1px solid var(--border)", color: "var(--text-secondary)" }}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          Commander maintenant
-        </a>
-      )}
-
-      {/* Delivery estimate */}
-      <div className="flex items-center gap-2 text-xs text-[#6b7280] py-1">
-        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
         </svg>
-        Livraison estimée : 3 à 5 jours ouvrables — 58 wilayas
-      </div>
+        {product.enStock ? "Ajouter au panier" : "Rupture de stock"}
+      </button>
 
       {/* WhatsApp link */}
       {whatsapp && (

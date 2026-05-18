@@ -5,6 +5,7 @@ export interface Category {
   description?: string;
   icone?: string;
   ordre?: number;
+  image?: { asset?: { _id: string; url: string }; alt?: string };
 }
 
 export interface FicheTechniqueItem {
