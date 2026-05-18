@@ -1,11 +1,11 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { sanityFetch, urlFor } from "@/lib/sanity";
 import { productBySlugQuery } from "@/lib/queries";
 import type { Product } from "@/lib/types";
 import AddToCartSection from "./AddToCartSection";
+import ProductImageGallery from "./ProductImageGallery";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -42,9 +42,6 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   const images = product.photos || [];
-  const mainImage = images[0]
-    ? urlFor(images[0]).width(800).height(800).fit("crop").url()
-    : null;
 
   return (
     <div className="pt-24 pb-20 min-h-screen">
@@ -68,47 +65,7 @@ export default async function ProductPage({ params }: Props) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Images */}
-          <div className="space-y-4">
-            <div className="relative aspect-square rounded-2xl overflow-hidden bg-[#111]" style={{ border: "1px solid var(--border)" }}>
-              {mainImage ? (
-                <Image
-                  src={mainImage}
-                  alt={product.nom}
-                  fill
-                  className="object-cover"
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg className="w-24 h-24 text-[#2a2a2a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              )}
-              {/* Stock badge overlay */}
-              <div className="absolute top-4 left-4">
-                <span className={`badge-stock ${product.enStock ? "available" : "unavailable"}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${product.enStock ? "bg-green-400" : "bg-red-400"}`} />
-                  {product.enStock ? "En stock" : "Rupture de stock"}
-                </span>
-              </div>
-            </div>
-
-            {/* Thumbnail gallery */}
-            {images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {images.map((img, i) => {
-                  const thumbUrl = urlFor(img).width(160).height(160).fit("crop").url();
-                  return (
-                    <div key={i} className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer" style={{ border: i === 0 ? "2px solid var(--violet)" : "1px solid var(--border)" }}>
-                      <Image src={thumbUrl} alt={`${product.nom} ${i + 1}`} fill className="object-cover" />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <ProductImageGallery images={images} productName={product.nom} enStock={product.enStock} />
 
           {/* Details */}
           <div>
