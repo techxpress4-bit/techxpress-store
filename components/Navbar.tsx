@@ -51,10 +51,23 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [allProducts, setAllProducts] = useState<SearchProduct[]>([]);
   const [suggestions, setSuggestions] = useState<SearchSuggestions>({ categories: [], products: [] });
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [userMenuOpen]);
 
   function closeSearch() {
     setSearchOpen(false);
@@ -195,28 +208,49 @@ export default function Navbar() {
 
               {/* Login / User */}
               {user ? (
-                <div className="hidden sm:flex items-center gap-2">
-                  <span className="text-xs text-[#9ca3af] max-w-[120px] truncate">
-                    {user.user_metadata?.prenom || user.email?.split("@")[0]}
-                  </span>
-                  <Link
-                    href="/account"
+                <div ref={userMenuRef} className="hidden sm:flex relative">
+                  <button
+                    onClick={() => setUserMenuOpen((o) => !o)}
+                    aria-expanded={userMenuOpen}
+                    aria-label="Mon compte"
                     className="flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[#2a2a2a] bg-[#161616] hover:border-violet hover:bg-[rgba(107,63,160,0.1)] transition-all duration-200 text-xs font-semibold text-[#9ca3af] hover:text-white"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    Mes commandes
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[#2a2a2a] bg-[#161616] hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-200 text-xs font-semibold text-[#9ca3af] hover:text-red-400"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    Mon Compte
+                    <svg className={`w-3 h-3 transition-transform duration-200 ${userMenuOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
-                    Déconnexion
                   </button>
+
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-44 rounded-xl overflow-hidden shadow-2xl shadow-black/70 z-50"
+                      style={{ background: "#111", border: "1px solid #2a2a2a" }}>
+                      <Link href="/account" onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#9ca3af] hover:text-white hover:bg-[#1a1a1a] transition-colors">
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Mon compte
+                      </Link>
+                      <Link href="/account" onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#9ca3af] hover:text-white hover:bg-[#1a1a1a] transition-colors">
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+                        </svg>
+                        Mes commandes
+                      </Link>
+                      <div className="mx-3 h-px" style={{ background: "var(--border)" }} />
+                      <button onClick={() => { handleLogout(); setUserMenuOpen(false); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#9ca3af] hover:text-red-400 hover:bg-[#1a1a1a] transition-colors">
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Déconnexion
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <Link
