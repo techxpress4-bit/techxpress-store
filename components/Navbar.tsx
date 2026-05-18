@@ -81,7 +81,9 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
+    // useCdn: false bypasses CDN CORS restrictions for client-side browser fetches
     sanityClient
+      .withConfig({ useCdn: false })
       .fetch<SearchProduct[]>(
         `*[_type == "product"] | order(nom asc) { _id, nom, slug, prix, categorie->{ nom, slug } }`
       )
