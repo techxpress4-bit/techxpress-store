@@ -9,7 +9,7 @@
     "lint": "next lint",
     "build:cloudflare": "next build",
     "preview": "opennextjs-cloudflare preview",
-    "deploy": "wrangler pages deploy out --project-name=techxpress-store",
+    "deploy": "wrangler pages deploy out --project-name=techxpress-store --branch=main",
     "sanity": "sanity dev",
     "seed": "tsx sanity/seed/seedProducts.ts"
   },
