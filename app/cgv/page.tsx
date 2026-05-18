@@ -147,13 +147,13 @@ export default function CGVPage() {
 
           <section>
             <h2 className="text-lg font-bold mb-3" style={{ fontFamily: "var(--font-syne)", color: "var(--violet-light)" }}>
-              9. Garanties
+              9. Garanties et service après-vente
             </h2>
             <p className="mb-3">
-              Tous les produits vendus bénéficient de la garantie légale de conformité prévue par la réglementation algérienne. En cas de défaut constaté à la livraison ou révélé en cours d'utilisation, le Client doit contacter TechXpress DZ en fournissant photos et/ou vidéos du problème.
+              Tous les produits vendus bénéficient de la garantie légale de conformité prévue par la réglementation algérienne, conformément au décret exécutif n°05-468 du 10 décembre 2005 fixant les conditions et modalités d'application du service après-vente. En cas de défaut constaté à la livraison ou révélé en cours d'utilisation, le Client doit contacter TechXpress DZ en fournissant photos et/ou vidéos du problème dans les meilleurs délais.
             </p>
             <p>
-              La garantie ne couvre pas les dommages causés par une mauvaise utilisation, une chute, ou une modification non autorisée du produit.
+              La garantie ne couvre pas les dommages causés par une mauvaise utilisation, une chute, une exposition à l'humidité, une surtension électrique, ou une modification non autorisée du produit.
             </p>
           </section>
 

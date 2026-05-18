@@ -84,8 +84,14 @@ export default function MentionsLegalesPage() {
               6. Droit applicable
             </h2>
             <p>
-              Les présentes mentions légales sont régies par la législation algérienne, notamment la loi n°04-02 du 23 juin 2004 fixant les règles applicables aux pratiques commerciales, et la loi n°18-05 du 10 mai 2018 relative au commerce électronique.
+              Les présentes mentions légales sont régies par la législation algérienne, notamment :
             </p>
+            <ul className="mt-3 space-y-1.5 list-disc list-inside">
+              <li>Loi n°04-02 du 23 juin 2004 fixant les règles applicables aux pratiques commerciales</li>
+              <li>Loi n°18-05 du 10 mai 2018 relative au commerce électronique</li>
+              <li>Loi n°18-07 du 10 juin 2018 relative à la protection des données à caractère personnel</li>
+              <li>Décret exécutif n°05-468 du 10 décembre 2005 fixant les conditions et modalités d'application du service après-vente</li>
+            </ul>
           </section>
 
           <section>

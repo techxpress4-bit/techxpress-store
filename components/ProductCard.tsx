@@ -25,8 +25,9 @@ export default function ProductCard({ product }: ProductCardProps) {
         background: "linear-gradient(135deg, rgba(107,63,160,0.06) 0%, var(--card) 50%)",
       }}
       onClick={() => {
-        if (typeof window !== "undefined" && (window as any).gtag) {
-          (window as any).gtag("event", "product_click", {
+        const w = typeof window !== "undefined" ? (window as { gtag?: (...args: unknown[]) => void }) : null;
+        if (w?.gtag) {
+          w.gtag("event", "product_click", {
             item_id: product._id,
             item_name: product.nom,
           });

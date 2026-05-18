@@ -162,10 +162,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const closeModal = useCallback(() => dispatch({ type: "CLOSE_MODAL" }), []);
 
   const totalItems = state.items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalPrice = state.items.reduce(
-    (sum, i) => sum + i.product.prix * i.quantity,
-    0
-  );
+  const totalPrice = state.items.reduce((sum, i) => {
+    const unitPrice =
+      i.optionAbonnement === "box-abonnement" && i.product.prixAbonnement
+        ? i.product.prixAbonnement
+        : i.product.prix;
+    return sum + unitPrice * i.quantity;
+  }, 0);
 
   return (
     <CartContext.Provider

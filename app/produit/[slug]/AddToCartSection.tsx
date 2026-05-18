@@ -24,8 +24,9 @@ export default function AddToCartSection({ product }: Props) {
     addItem(product, selectedOption);
     openModal(product);
 
-    if (typeof window !== "undefined" && (window as any).gtag) {
-      (window as any).gtag("event", "add_to_cart", {
+    const w = typeof window !== "undefined" ? (window as { gtag?: (...args: unknown[]) => void }) : null;
+    if (w?.gtag) {
+      w.gtag("event", "add_to_cart", {
         currency: "DZD",
         value: prixActuel,
         items: [{ item_id: product._id, item_name: product.nom, price: prixActuel }],

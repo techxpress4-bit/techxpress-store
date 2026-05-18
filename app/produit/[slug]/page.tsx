@@ -156,13 +156,14 @@ export default async function ProductPage({ params }: Props) {
                   Description
                 </h3>
                 <div className="text-[#9ca3af] text-sm leading-relaxed space-y-3">
-                  {product.description.map((block: any) =>
-                    block._type === "block" && block.children ? (
-                      <p key={block._key}>
-                        {block.children.map((child: any) => child.text).join("")}
+                  {product.description.map((block) => {
+                    const b = block as { _type: string; _key: string; children?: { text?: string }[] };
+                    return b._type === "block" && b.children ? (
+                      <p key={b._key}>
+                        {b.children.map((child) => child.text ?? "").join("")}
                       </p>
-                    ) : null
-                  )}
+                    ) : null;
+                  })}
                 </div>
               </div>
             )}

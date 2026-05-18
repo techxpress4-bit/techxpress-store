@@ -36,18 +36,26 @@ export default function CommanderClient() {
       return;
     }
 
+    // Validation téléphone algérien : 05/06/07 + 8 chiffres ou +213
+    const phoneClean = form.telephone.replace(/\s|-|\./g, "");
+    const phoneOk = /^(?:0[567]\d{8}|\+213[567]\d{8})$/.test(phoneClean);
+    if (!phoneOk) {
+      toast.error("Numéro de téléphone invalide (ex : 05XXXXXXXX)");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/commande", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, items, totalPrice }),
+        body: JSON.stringify({ ...form, telephone: phoneClean, items, totalPrice }),
       });
 
       if (!res.ok) throw new Error("Erreur serveur");
 
-      if (typeof window !== "undefined" && (window as any).gtag) {
-        (window as any).gtag("event", "purchase", {
+      if (typeof window !== "undefined" && (window as { gtag?: (...args: unknown[]) => void }).gtag) {
+        (window as { gtag?: (...args: unknown[]) => void }).gtag!("event", "purchase", {
           currency: "DZD",
           value: totalPrice,
           transaction_id: `TX-${Date.now()}`,
@@ -56,7 +64,7 @@ export default function CommanderClient() {
 
       clearCart();
       router.push("/confirmation");
-    } catch (err) {
+    } catch {
       toast.error("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setLoading(false);
@@ -103,6 +111,7 @@ export default function CommanderClient() {
                   <input
                     type="text"
                     name="prenom"
+                    autoComplete="given-name"
                     value={form.prenom}
                     onChange={handleChange}
                     required
@@ -115,6 +124,7 @@ export default function CommanderClient() {
                   <input
                     type="text"
                     name="nom"
+                    autoComplete="family-name"
                     value={form.nom}
                     onChange={handleChange}
                     required
@@ -129,6 +139,7 @@ export default function CommanderClient() {
                 <input
                   type="text"
                   name="adresse"
+                  autoComplete="street-address"
                   value={form.adresse}
                   onChange={handleChange}
                   required
@@ -143,6 +154,8 @@ export default function CommanderClient() {
                   <input
                     type="tel"
                     name="telephone"
+                    autoComplete="tel"
+                    inputMode="tel"
                     value={form.telephone}
                     onChange={handleChange}
                     required
@@ -154,6 +167,7 @@ export default function CommanderClient() {
                   <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Wilaya *</label>
                   <select
                     name="wilaya"
+                    autoComplete="address-level1"
                     value={form.wilaya}
                     onChange={handleChange}
                     required
@@ -224,24 +238,30 @@ export default function CommanderClient() {
               </h2>
 
               <div className="space-y-3 mb-5">
-                {items.map((item) => (
-                  <div key={`${item.product._id}-${item.optionAbonnement}`} className="flex justify-between gap-3 text-sm">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[#f5f5f5] line-clamp-2 text-xs font-medium" style={{ fontFamily: "var(--font-syne)" }}>
-                        {item.product.nom}
-                      </p>
-                      {item.optionAbonnement && (
-                        <p className="text-[#6b7280] text-xs mt-0.5">
-                          {abonnementLabels[item.optionAbonnement]}
+                {items.map((item) => {
+                  const unitPrice =
+                    item.optionAbonnement === "box-abonnement" && item.product.prixAbonnement
+                      ? item.product.prixAbonnement
+                      : item.product.prix;
+                  return (
+                    <div key={`${item.product._id}-${item.optionAbonnement}`} className="flex justify-between gap-3 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[#f5f5f5] line-clamp-2 text-xs font-medium" style={{ fontFamily: "var(--font-syne)" }}>
+                          {item.product.nom}
                         </p>
-                      )}
-                      <p className="text-[#6b7280] text-xs">Qté : {item.quantity}</p>
+                        {item.optionAbonnement && (
+                          <p className="text-[#6b7280] text-xs mt-0.5">
+                            {abonnementLabels[item.optionAbonnement]}
+                          </p>
+                        )}
+                        <p className="text-[#6b7280] text-xs">Qté : {item.quantity}</p>
+                      </div>
+                      <span className="text-white text-sm flex-shrink-0 font-semibold">
+                        {(unitPrice * item.quantity).toLocaleString("fr-DZ")} DA
+                      </span>
                     </div>
-                    <span className="text-white text-sm flex-shrink-0 font-semibold">
-                      {(item.product.prix * item.quantity).toLocaleString("fr-DZ")} DA
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="divider mb-4" />

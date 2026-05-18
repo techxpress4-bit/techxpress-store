@@ -58,6 +58,24 @@ export default function LoginClient() {
     });
   }
 
+  async function handlePasswordReset() {
+    const email = loginData.identifier.trim();
+    if (!email) {
+      toast.error("Saisissez d'abord votre email pour recevoir le lien");
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      });
+      if (error) throw error;
+      toast.success("Email de réinitialisation envoyé. Vérifiez votre boîte.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Impossible d'envoyer l'email";
+      toast.error(msg);
+    }
+  }
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     if (registerData.password !== registerData.confirm) {
@@ -201,9 +219,13 @@ export default function LoginClient() {
                     />
                     Se souvenir de moi
                   </label>
-                  <a href="#" className="text-[#8b5fc0] hover:text-[#c084fc] transition-colors">
+                  <button
+                    type="button"
+                    onClick={handlePasswordReset}
+                    className="text-[#8b5fc0] hover:text-[#c084fc] transition-colors"
+                  >
                     Mot de passe oublié ?
-                  </a>
+                  </button>
                 </div>
 
                 <button

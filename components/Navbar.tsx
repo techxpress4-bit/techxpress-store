@@ -182,8 +182,9 @@ export default function Navbar() {
               {/* Search */}
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
-                className="hidden sm:flex items-center justify-center w-9 h-9 rounded-xl border border-[#2a2a2a] bg-[#161616] hover:border-violet hover:bg-[rgba(107,63,160,0.1)] transition-all duration-200"
-                aria-label="Rechercher"
+                className="flex items-center justify-center w-9 h-9 rounded-xl border border-[#2a2a2a] bg-[#161616] hover:border-violet hover:bg-[rgba(107,63,160,0.1)] transition-all duration-200"
+                aria-label="Rechercher un produit"
+                aria-expanded={searchOpen}
               >
                 <svg className="w-4 h-4 text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -253,7 +254,8 @@ export default function Navbar() {
               <button
                 className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl border border-[#2a2a2a] bg-[#161616]"
                 onClick={() => setMenuOpen(!menuOpen)}
-                aria-label="Menu"
+                aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+                aria-expanded={menuOpen}
               >
                 {menuOpen ? (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

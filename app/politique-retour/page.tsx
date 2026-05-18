@@ -41,7 +41,7 @@ export default function PolitiqueRetourPage() {
               1. Délai de rétractation
             </h2>
             <p>
-              Le délai de 10 jours calendaires court à compter du lendemain de la réception du produit. S'il expire un vendredi ou un jour férié algérien, il est prolongé jusqu'au prochain jour ouvrable.
+              Le délai de 10 jours calendaires court à compter du lendemain de la réception du produit. S'il expire un jour de week-end (vendredi/samedi en Algérie) ou un jour férié officiel, il est prolongé jusqu'au prochain jour ouvrable.
             </p>
           </section>
 
@@ -76,8 +76,8 @@ export default function PolitiqueRetourPage() {
             <p className="mb-4">Le droit de rétractation ne s'applique pas aux produits suivants :</p>
             <ul className="space-y-2">
               {[
-                "Abonnements TV / IPTV (une fois activés)",
-                "Logiciels et licences une fois descellés ou activés",
+                "Abonnements et codes d'accès (services numériques) une fois activés ou les identifiants communiqués au client",
+                "Logiciels, applications et licences une fois descellés ou activés",
                 "Produits descellés pour des raisons d'hygiène ou de sécurité",
                 "Articles personnalisés ou configurés à la demande du client",
                 "Produits endommagés par le client (chute, mauvaise utilisation, infiltration)",

@@ -7,7 +7,15 @@ import { useCart } from "@/context/CartContext";
 import { urlFor } from "@/lib/sanity";
 
 export default function CartModal() {
-  const { closeModal, lastAdded, totalItems } = useCart();
+  const { closeModal, lastAdded, totalItems, items } = useCart();
+  // Récupère la dernière option choisie pour ce produit (si présent dans le panier)
+  const lastEntry = lastAdded
+    ? items.find((i) => i.product._id === lastAdded._id)
+    : undefined;
+  const previewPrice =
+    lastEntry?.optionAbonnement === "box-abonnement" && lastAdded?.prixAbonnement
+      ? lastAdded.prixAbonnement
+      : lastAdded?.prix ?? 0;
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -39,6 +47,7 @@ export default function CartModal() {
             </div>
             <button
               onClick={closeModal}
+              aria-label="Fermer"
               className="w-7 h-7 flex items-center justify-center rounded-lg text-[#6b7280] hover:text-white hover:bg-[#2a2a2a] transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -71,7 +80,7 @@ export default function CartModal() {
                   {lastAdded.nom}
                 </p>
                 <p className="price text-sm mt-1">
-                  {lastAdded.prix.toLocaleString("fr-DZ")}<span>DA</span>
+                  {previewPrice.toLocaleString("fr-DZ")}<span>DA</span>
                 </p>
               </div>
             </div>

@@ -14,6 +14,15 @@ export default function ContactClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validation simple
+    if (!form.nom.trim() || !form.message.trim()) {
+      toast.error("Nom et message obligatoires");
+      return;
+    }
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      toast.error("Adresse email invalide");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/commande", {
@@ -146,16 +155,16 @@ export default function ContactClient() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Nom complet *</label>
-                    <input type="text" name="nom" value={form.nom} onChange={handleChange} required placeholder="Votre nom" className="input-field" />
+                    <input type="text" name="nom" autoComplete="name" value={form.nom} onChange={handleChange} required placeholder="Prénom et nom" className="input-field" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Téléphone *</label>
-                    <input type="tel" name="telephone" value={form.telephone} onChange={handleChange} required placeholder="05 XX XX XX XX" className="input-field" />
+                    <input type="tel" name="telephone" autoComplete="tel" value={form.telephone} onChange={handleChange} required placeholder="05 XX XX XX XX" className="input-field" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Email (optionnel)</label>
-                  <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="votre@email.com" className="input-field" />
+                  <input type="email" name="email" autoComplete="email" value={form.email} onChange={handleChange} placeholder="votre@email.com" className="input-field" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Message *</label>

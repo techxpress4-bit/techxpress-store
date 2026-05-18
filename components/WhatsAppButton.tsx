@@ -15,8 +15,9 @@ export default function WhatsAppButton() {
   }, []);
 
   const handleClick = () => {
-    if (typeof window !== "undefined" && (window as any).gtag) {
-      (window as any).gtag("event", "whatsapp_click", { event_category: "engagement" });
+    const w = typeof window !== "undefined" ? (window as { gtag?: (...args: unknown[]) => void }) : null;
+    if (w?.gtag) {
+      w.gtag("event", "whatsapp_click", { event_category: "engagement" });
     }
   };
 

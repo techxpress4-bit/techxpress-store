@@ -24,21 +24,36 @@ export default function AccountClient() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) {
-        router.push("/login");
-        return;
-      }
-      setUser(data.user);
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", data.user.id)
-        .single();
-      setProfile(prof);
-      setNewsletter(prof?.newsletter_opt_in ?? true);
-      setLoading(false);
-    });
+    let active = true;
+    supabase.auth
+      .getUser()
+      .then(async ({ data }) => {
+        if (!data.user) {
+          router.push("/login");
+          return;
+        }
+        if (!active) return;
+        setUser(data.user);
+        try {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", data.user.id)
+            .single();
+          if (!active) return;
+          setProfile(prof);
+          setNewsletter(prof?.newsletter_opt_in ?? true);
+        } catch {
+          // profil absent : on continue avec les valeurs par défaut
+        }
+        if (active) setLoading(false);
+      })
+      .catch(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -47,10 +62,13 @@ export default function AccountClient() {
     setSaving(true);
     const next = !newsletter;
     setNewsletter(next);
+    // upsert : crée le profil s'il n'existe pas encore, sinon le met à jour
     const { error } = await supabase
       .from("profiles")
-      .update({ newsletter_opt_in: next })
-      .eq("id", user.id);
+      .upsert(
+        { id: user.id, newsletter_opt_in: next },
+        { onConflict: "id" }
+      );
     if (error) {
       toast.error("Erreur lors de la mise à jour");
       setNewsletter(!next);

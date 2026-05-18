@@ -46,7 +46,10 @@ export default function CartPageClient() {
             <h1 className="section-title">Votre panier</h1>
           </div>
           <button
-            onClick={clearCart}
+            onClick={() => {
+              if (confirm("Voulez-vous vraiment vider le panier ?")) clearCart();
+            }}
+            aria-label="Vider le panier"
             className="text-xs text-[#6b7280] hover:text-red-400 transition-colors flex items-center gap-1.5"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -64,6 +67,10 @@ export default function CartPageClient() {
                 item.product.photos?.[0]
                   ? urlFor(item.product.photos[0]).width(200).height(200).url()
                   : null;
+              const unitPrice =
+                item.optionAbonnement === "box-abonnement" && item.product.prixAbonnement
+                  ? item.product.prixAbonnement
+                  : item.product.prix;
 
               return (
                 <div key={`${item.product._id}-${item.optionAbonnement}`} className="card p-5 flex gap-5">
@@ -111,15 +118,17 @@ export default function CartPageClient() {
                       <div className="flex items-center gap-1 rounded-lg overflow-hidden" style={{ border: "1px solid var(--border)" }}>
                         <button
                           onClick={() => updateQuantity(item.product._id, item.quantity - 1)}
+                          aria-label="Diminuer la quantité"
                           className="w-8 h-8 flex items-center justify-center text-[#9ca3af] hover:text-white hover:bg-[#2a2a2a] transition-colors text-lg"
                         >
                           −
                         </button>
-                        <span className="w-10 text-center text-sm font-semibold text-white">
+                        <span className="w-10 text-center text-sm font-semibold text-white" aria-live="polite">
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => updateQuantity(item.product._id, item.quantity + 1)}
+                          aria-label="Augmenter la quantité"
                           className="w-8 h-8 flex items-center justify-center text-[#9ca3af] hover:text-white hover:bg-[#2a2a2a] transition-colors text-lg"
                         >
                           +
@@ -127,7 +136,7 @@ export default function CartPageClient() {
                       </div>
 
                       <p className="price text-base">
-                        {(item.product.prix * item.quantity).toLocaleString("fr-DZ")}
+                        {(unitPrice * item.quantity).toLocaleString("fr-DZ")}
                         <span>DA</span>
                       </p>
 
@@ -155,21 +164,27 @@ export default function CartPageClient() {
               </h3>
 
               <div className="space-y-3 mb-5">
-                {items.map((item) => (
-                  <div key={`${item.product._id}-${item.optionAbonnement}`} className="flex justify-between text-sm">
-                    <span className="text-[#9ca3af] line-clamp-1 flex-1 mr-2">
-                      {item.product.nom} ×{item.quantity}
-                      {item.optionAbonnement && (
-                        <span className="block text-xs text-[#6b7280]">
-                          {abonnementLabels[item.optionAbonnement]}
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-white flex-shrink-0">
-                      {(item.product.prix * item.quantity).toLocaleString("fr-DZ")} DA
-                    </span>
-                  </div>
-                ))}
+                {items.map((item) => {
+                  const unitPrice =
+                    item.optionAbonnement === "box-abonnement" && item.product.prixAbonnement
+                      ? item.product.prixAbonnement
+                      : item.product.prix;
+                  return (
+                    <div key={`${item.product._id}-${item.optionAbonnement}`} className="flex justify-between text-sm">
+                      <span className="text-[#9ca3af] line-clamp-1 flex-1 mr-2">
+                        {item.product.nom} ×{item.quantity}
+                        {item.optionAbonnement && (
+                          <span className="block text-xs text-[#6b7280]">
+                            {abonnementLabels[item.optionAbonnement]}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-white flex-shrink-0">
+                        {(unitPrice * item.quantity).toLocaleString("fr-DZ")} DA
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="divider mb-5" />
@@ -190,8 +205,9 @@ export default function CartPageClient() {
                 href="/commander"
                 className="btn-primary justify-center w-full text-base"
                 onClick={() => {
-                  if (typeof window !== "undefined" && (window as any).gtag) {
-                    (window as any).gtag("event", "begin_checkout", {
+                  const w = typeof window !== "undefined" ? (window as { gtag?: (...args: unknown[]) => void }) : null;
+                  if (w?.gtag) {
+                    w.gtag("event", "begin_checkout", {
                       currency: "DZD",
                       value: totalPrice,
                     });

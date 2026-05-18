@@ -9,8 +9,9 @@ function TrackPageView() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).gtag) {
-      (window as any).gtag("event", "page_view", {
+    const w = typeof window !== "undefined" ? (window as { gtag?: (...args: unknown[]) => void }) : null;
+    if (w?.gtag) {
+      w.gtag("event", "page_view", {
         page_path: pathname + (searchParams.toString() ? `?${searchParams}` : ""),
       });
     }
