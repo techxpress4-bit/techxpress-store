@@ -23,6 +23,7 @@ export interface Product {
   description?: PortableTextBlock[];
   ficheTechnique?: FicheTechniqueItem[];
   prix: number;
+  prixAbonnement?: number;
   enStock: boolean;
   optionAbonnement: boolean;
   featured: boolean;

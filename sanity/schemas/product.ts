@@ -71,9 +71,15 @@ export const productSchema = defineType({
     }),
     defineField({
       name: "prix",
-      title: "Prix (DA)",
+      title: "Prix Box seule (DA)",
       type: "number",
       validation: (Rule) => Rule.required().min(0),
+    }),
+    defineField({
+      name: "prixAbonnement",
+      title: "Prix Box + Abonnement (DA)",
+      type: "number",
+      description: "Prix quand l'option abonnement TV est choisie. Laisser vide si non applicable.",
     }),
     defineField({
       name: "enStock",

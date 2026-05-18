@@ -114,13 +114,13 @@ h1, h2, h3, h4, h5, h6 {
 
   .card-product {
     @apply transition-all duration-300;
-    /* Pas de border override — on garde celle de .card (#2a2a2a) pour la lisibilité desktop */
-    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   }
   .card-product:hover {
     transform: translateY(-4px);
-    border-color: rgba(107, 63, 160, 0.5);
-    box-shadow: 0 20px 50px rgba(107, 63, 160, 0.25), 0 4px 16px rgba(0,0,0,0.4);
+    border-color: rgba(107, 63, 160, 0.6);
+    box-shadow: 0 20px 50px rgba(107, 63, 160, 0.28), 0 4px 16px rgba(0,0,0,0.5);
   }
 
   /* Hide scrollbar */

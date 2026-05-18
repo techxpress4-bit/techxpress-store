@@ -126,13 +126,7 @@ export default async function ProductPage({ params }: Props) {
               {product.nom}
             </h1>
 
-            <div className="flex items-center gap-4 mb-8">
-              <p className="price text-4xl">
-                {product.prix.toLocaleString("fr-DZ")}<span className="text-xl">DA</span>
-              </p>
-            </div>
-
-            {/* Add to cart section (client component) */}
+            {/* Prix + options (client component — prix dynamique selon option abonnement) */}
             <AddToCartSection product={product} />
 
             {/* Fiche technique */}
