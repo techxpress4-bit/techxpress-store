@@ -39,7 +39,8 @@ export const productBySlugQuery = `
     photos,
     description,
     ficheTechnique,
-    prix, prixAbonnement, enStock, optionAbonnement
+    prix, prixAbonnement, enStock, optionAbonnement,
+    marque, garantie, reference
   }
 `;
 

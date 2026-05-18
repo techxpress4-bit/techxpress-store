@@ -28,6 +28,9 @@ export interface Product {
   optionAbonnement: boolean;
   featured: boolean;
   nouveaute?: boolean;
+  marque?: string;
+  garantie?: number;
+  reference?: string;
 }
 
 export interface SanityImage {

@@ -126,6 +126,22 @@ export default async function ProductPage({ params }: Props) {
               {product.nom}
             </h1>
 
+            {/* Marque + Référence */}
+            {(product.marque || product.reference) && (
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                {product.marque && (
+                  <span className="text-xs font-semibold text-[#9ca3af] px-2.5 py-1 rounded-lg" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                    {product.marque}
+                  </span>
+                )}
+                {product.reference && (
+                  <span className="text-xs text-[#6b7280]">
+                    Réf : {product.reference}
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Prix + options (client component — prix dynamique selon option abonnement) */}
             <AddToCartSection product={product} />
 
@@ -173,7 +189,7 @@ export default async function ProductPage({ params }: Props) {
               {[
                 { icon: "🚚", text: "Livraison dans 58 wilayas" },
                 { icon: "💵", text: "Paiement à la livraison" },
-                { icon: "🛡️", text: "Produit garanti" },
+                { icon: "🛡️", text: product.garantie ? `Garantie ${product.garantie} mois` : "Produit garanti" },
                 { icon: "📞", text: "Support WhatsApp" },
               ].map((f) => (
                 <div key={f.text} className="flex items-center gap-2 p-3 rounded-xl text-xs text-[#9ca3af]" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>

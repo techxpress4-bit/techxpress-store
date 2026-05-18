@@ -109,6 +109,25 @@ export const productSchema = defineType({
       initialValue: false,
       description: "Affiche le badge vert « Nouveau » sur la carte produit",
     }),
+    defineField({
+      name: "marque",
+      title: "Marque / Fabricant",
+      type: "string",
+      description: "Ex: Xiaomi, Samsung, TP-Link, Décodeur Android…",
+    }),
+    defineField({
+      name: "garantie",
+      title: "Durée de garantie (mois)",
+      type: "number",
+      description: "Durée de la garantie en mois. Requis par le décret 05-468 SAV. Ex: 12, 24",
+      validation: (Rule) => Rule.min(0).integer(),
+    }),
+    defineField({
+      name: "reference",
+      title: "Référence / SKU",
+      type: "string",
+      description: "Référence interne du produit pour la gestion de stock",
+    }),
   ],
   orderings: [
     {
