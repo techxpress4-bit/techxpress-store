@@ -156,6 +156,21 @@ export default function Footer() {
           <p className="text-xs text-[#3d3d3d]">
             © {new Date().getFullYear()} TechXpress DZ — Tous droits réservés 🇩🇿
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            {[
+              { label: "Mentions légales", href: "/mentions-legales" },
+              { label: "CGV", href: "/cgv" },
+              { label: "Confidentialité", href: "/confidentialite" },
+              { label: "Politique de retour", href: "/politique-retour" },
+            ].map((l, i, arr) => (
+              <span key={l.href} className="flex items-center gap-4">
+                <Link href={l.href} className="text-xs text-[#3d3d3d] hover:text-[#6b7280] transition-colors">
+                  {l.label}
+                </Link>
+                {i < arr.length - 1 && <span className="text-[#2a2a2a]">·</span>}
+              </span>
+            ))}
+          </div>
           <p className="text-xs text-[#3d3d3d]">
             Paiement à la livraison · Sans paiement en ligne
           </p>
