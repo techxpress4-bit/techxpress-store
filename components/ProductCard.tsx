@@ -11,8 +11,10 @@ interface ProductCardProps {
 
 function isPromoActive(product: Product): boolean {
   if (!product.prixPromo || product.prixPromo >= product.prix) return false;
-  if (!product.dateFinPromo) return true;
-  return product.dateFinPromo >= new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
+  if (product.dateDebutPromo && product.dateDebutPromo > today) return false;
+  if (product.dateFinPromo && product.dateFinPromo < today) return false;
+  return true;
 }
 
 /* Styles partagés pour tous les badges */

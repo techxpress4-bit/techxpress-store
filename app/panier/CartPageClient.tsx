@@ -69,6 +69,7 @@ export default function CartPageClient() {
                   : null;
               const today = new Date().toISOString().split("T")[0];
               const promoActive = !!item.product.prixPromo && item.product.prixPromo < item.product.prix &&
+                (!item.product.dateDebutPromo || item.product.dateDebutPromo <= today) &&
                 (!item.product.dateFinPromo || item.product.dateFinPromo >= today);
               const prixBase = promoActive ? item.product.prixPromo! : item.product.prix;
               const unitPrice = item.variantPrix
@@ -174,6 +175,7 @@ export default function CartPageClient() {
                 {items.map((item) => {
                   const today2 = new Date().toISOString().split("T")[0];
                   const promo2 = !!item.product.prixPromo && item.product.prixPromo < item.product.prix &&
+                    (!item.product.dateDebutPromo || item.product.dateDebutPromo <= today2) &&
                     (!item.product.dateFinPromo || item.product.dateFinPromo >= today2);
                   const unitPrice = item.variantPrix
                     ?? (item.optionAbonnement === "box-abonnement" && item.product.prixAvecAbonnement

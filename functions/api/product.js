@@ -18,7 +18,7 @@ export async function onRequestGet(context) {
     photos,
     description,
     ficheTechnique,
-    prix, prixPromo, dateFinPromo, prixAvecAbonnement, enStock, optionAbonnement,
+    prix, prixPromo, dateDebutPromo, dateFinPromo, prixAvecAbonnement, enStock, optionAbonnement,
     marque, garantie, reference
   }`;
 

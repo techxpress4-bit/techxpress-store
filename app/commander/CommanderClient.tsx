@@ -308,6 +308,7 @@ export default function CommanderClient() {
                 {items.map((item) => {
                   const today = new Date().toISOString().split("T")[0];
                   const promoActive = !!item.product.prixPromo && item.product.prixPromo < item.product.prix &&
+                    (!item.product.dateDebutPromo || item.product.dateDebutPromo <= today) &&
                     (!item.product.dateFinPromo || item.product.dateFinPromo >= today);
                   const unitPrice =
                     item.optionAbonnement === "box-abonnement" && item.product.prixAvecAbonnement

@@ -11,14 +11,18 @@ interface Props {
 
 function isPromoActive(product: Product): boolean {
   if (!product.prixPromo || product.prixPromo >= product.prix) return false;
-  if (!product.dateFinPromo) return true;
-  return product.dateFinPromo >= new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
+  if (product.dateDebutPromo && product.dateDebutPromo > today) return false;
+  if (product.dateFinPromo && product.dateFinPromo < today) return false;
+  return true;
 }
 
 function isVariantPromoActive(v: Variante): boolean {
   if (!v.prixPromo || v.prixPromo >= v.prix) return false;
-  if (!v.dateFinPromo) return true;
-  return v.dateFinPromo >= new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
+  if (v.dateDebutPromo && v.dateDebutPromo > today) return false;
+  if (v.dateFinPromo && v.dateFinPromo < today) return false;
+  return true;
 }
 
 export default function AddToCartSection({ product, onVariantChange }: Props) {

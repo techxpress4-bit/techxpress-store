@@ -19,6 +19,7 @@ export interface Variante {
   couleur?: string;
   prix: number;
   prixPromo?: number;
+  dateDebutPromo?: string;
   dateFinPromo?: string;
   photo?: SanityImage;
   enStock?: boolean;
@@ -38,6 +39,7 @@ export interface Product {
   prix: number;
   prixAvecAbonnement?: number;
   prixPromo?: number;
+  dateDebutPromo?: string;
   dateFinPromo?: string;
   enStock: boolean;
   optionAbonnement: boolean;

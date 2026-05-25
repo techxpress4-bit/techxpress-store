@@ -157,6 +157,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const promoActive =
         !!i.product.prixPromo &&
         i.product.prixPromo < i.product.prix &&
+        (!i.product.dateDebutPromo || i.product.dateDebutPromo <= today) &&
         (!i.product.dateFinPromo || i.product.dateFinPromo >= today);
       const prixBase = promoActive ? i.product.prixPromo! : i.product.prix;
       unitPrice =

@@ -34,6 +34,7 @@ function buildJsonLd(product: Product) {
   const promoActive =
     !!product.prixPromo &&
     product.prixPromo < product.prix &&
+    (!product.dateDebutPromo || product.dateDebutPromo <= today) &&
     (!product.dateFinPromo || product.dateFinPromo >= today);
   const price = promoActive ? product.prixPromo! : product.prix;
   const image = product.photos?.[0]

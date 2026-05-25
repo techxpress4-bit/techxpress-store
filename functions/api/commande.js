@@ -158,6 +158,7 @@ export async function onRequestPost(context) {
         const isAbonnement = item?.optionAbonnement === "box-abonnement";
         const today = new Date().toISOString().split("T")[0];
         const promoActive = Number(p.prixPromo) > 0 && Number(p.prixPromo) < Number(p.prix) &&
+          (!p.dateDebutPromo || p.dateDebutPromo <= today) &&
           (!p.dateFinPromo || p.dateFinPromo >= today);
         const prixBase = promoActive ? Number(p.prixPromo) : Number(p.prix) || 0;
         const unit =
@@ -268,6 +269,7 @@ export async function onRequestPost(context) {
                   const isAbonnement = item?.optionAbonnement === "box-abonnement";
                   const today = new Date().toISOString().split("T")[0];
                   const promoActive = Number(p.prixPromo) > 0 && Number(p.prixPromo) < Number(p.prix) &&
+                    (!p.dateDebutPromo || p.dateDebutPromo <= today) &&
                     (!p.dateFinPromo || p.dateFinPromo >= today);
                   const prixBase = promoActive ? Number(p.prixPromo) : Number(p.prix) || 0;
                   const unit = isAbonnement && Number(p.prixAvecAbonnement) > 0 ? Number(p.prixAvecAbonnement) : prixBase;

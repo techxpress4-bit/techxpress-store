@@ -13,6 +13,7 @@ export default function CartModal() {
     : undefined;
   const today = new Date().toISOString().split("T")[0];
   const promoActive = !!lastAdded?.prixPromo && lastAdded.prixPromo < (lastAdded?.prix ?? Infinity) &&
+    (!lastAdded?.dateDebutPromo || lastAdded.dateDebutPromo <= today) &&
     (!lastAdded?.dateFinPromo || lastAdded.dateFinPromo >= today);
   const prixBase = promoActive ? lastAdded!.prixPromo! : (lastAdded?.prix ?? 0);
   const previewPrice = lastEntry?.variantPrix
