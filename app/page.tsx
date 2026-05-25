@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { sanityFetch } from "@/lib/sanity";
-import { featuredProductsQuery, allCategoriesQuery } from "@/lib/queries";
-import type { Product, Category } from "@/lib/types";
+import { allCategoriesQuery } from "@/lib/queries";
+import type { Category } from "@/lib/types";
 import CategoryCarousel from "@/components/CategoryCarousel";
-import ProductCarousel from "@/components/ProductCarousel";
-import { ProductGridSkeleton } from "@/components/ProductCardSkeleton";
+import BestSellersClient from "@/components/BestSellersClient";
 
 async function CategoriesSection() {
   let categories: Category[] = [];
@@ -18,22 +17,6 @@ async function CategoriesSection() {
   return <CategoryCarousel categories={categories} />;
 }
 
-async function BestSellersSection() {
-  let featured: Product[] = [];
-  try {
-    featured = await sanityFetch<Product[]>(featuredProductsQuery);
-  } catch {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <p className="text-center text-[#6b7280] py-10">
-          Impossible de charger les produits. Réessayez dans un instant.
-        </p>
-      </div>
-    );
-  }
-  if (!featured || featured.length === 0) return null;
-  return <ProductCarousel products={featured} />;
-}
 
 export default async function HomePage() {
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") || "";
@@ -41,7 +24,7 @@ export default async function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+      <section className="relative sm:min-h-[90vh] flex items-center justify-center overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0 bg-hero-gradient" />
         <div
@@ -62,7 +45,7 @@ export default async function HomePage() {
           style={{ background: "#8b5fc0" }}
         />
 
-        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-24">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-24 pb-12 sm:pb-0">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-8 animate-fade-in" style={{ background: "rgba(107,63,160,0.15)", border: "1px solid rgba(107,63,160,0.4)", color: "#c084fc" }}>
             <span className="w-1.5 h-1.5 rounded-full bg-[#c084fc] animate-pulse" />
@@ -94,10 +77,10 @@ export default async function HomePage() {
             {" "}en Algérie
           </h1>
 
-          <p className="text-lg md:text-xl text-[#9ca3af] mb-10 max-w-2xl mx-auto" style={{ animationDelay: "0.2s" }}>
+          <p className="hidden sm:block text-lg md:text-xl text-[#9ca3af] mb-10 max-w-2xl mx-auto" style={{ animationDelay: "0.2s" }}>
             Box TV Android, accessoires, câbles, routeurs et plus.
             <br />
-            <strong className="text-[#f5f5f5]">Paiement à la livraison</strong> — commandez en ligne, payez à la réception.
+            <strong className="text-[#f5f5f5]">Paiement à la livraison</strong> : commandez en ligne, payez à la réception.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -123,7 +106,7 @@ export default async function HomePage() {
           </div>
 
           {/* Features strip */}
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-5">
+          <div className="hidden sm:grid mt-16 grid-cols-2 md:grid-cols-4 gap-4 lg:gap-5">
             {[
               {
                 svg: (
@@ -209,27 +192,21 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Categories carousel */}
-      <Suspense fallback={
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
-          <div className="flex gap-4 overflow-hidden">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="skeleton rounded-2xl flex-shrink-0" style={{ width: 160, height: 120 }} />
-            ))}
+      {/* Catégories en premier, Best Sellers en second */}
+      <div>
+        <Suspense fallback={
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
+            <div className="flex gap-4 overflow-hidden">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="skeleton rounded-2xl flex-shrink-0" style={{ width: 160, height: 120 }} />
+              ))}
+            </div>
           </div>
-        </div>
-      }>
-        <CategoriesSection />
-      </Suspense>
-
-      {/* Best Sellers carousel */}
-      <Suspense fallback={
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-          <ProductGridSkeleton count={8} />
-        </div>
-      }>
-        <BestSellersSection />
-      </Suspense>
+        }>
+          <CategoriesSection />
+        </Suspense>
+        <BestSellersClient />
+      </div>
 
       {/* WhatsApp CTA */}
       {whatsapp && (

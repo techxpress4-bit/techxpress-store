@@ -7,15 +7,18 @@ import { useCart } from "@/context/CartContext";
 import { urlFor } from "@/lib/sanity";
 
 export default function CartModal() {
-  const { closeModal, lastAdded, totalItems, items } = useCart();
-  // Récupère la dernière option choisie pour ce produit (si présent dans le panier)
+  const { closeModal, lastAdded, lastAddedVariantNom, totalItems, items } = useCart();
   const lastEntry = lastAdded
-    ? items.find((i) => i.product._id === lastAdded._id)
+    ? items.find((i) => i.product._id === lastAdded._id && i.variantNom === lastAddedVariantNom)
     : undefined;
-  const previewPrice =
-    lastEntry?.optionAbonnement === "box-abonnement" && lastAdded?.prixAbonnement
-      ? lastAdded.prixAbonnement
-      : lastAdded?.prix ?? 0;
+  const today = new Date().toISOString().split("T")[0];
+  const promoActive = !!lastAdded?.prixPromo && lastAdded.prixPromo < (lastAdded?.prix ?? Infinity) &&
+    (!lastAdded?.dateFinPromo || lastAdded.dateFinPromo >= today);
+  const prixBase = promoActive ? lastAdded!.prixPromo! : (lastAdded?.prix ?? 0);
+  const previewPrice = lastEntry?.variantPrix
+    ?? (lastEntry?.optionAbonnement === "box-abonnement" && lastAdded?.prixAvecAbonnement
+      ? lastAdded.prixAvecAbonnement
+      : prixBase);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -31,7 +34,8 @@ export default function CartModal() {
       />
 
       {/* Modal */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-full max-w-md mx-4 animate-slide-up">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 pointer-events-none">
+        <div className="pointer-events-auto w-full max-w-md animate-slide-up">
         <div className="card p-6 shadow-2xl shadow-black/80" style={{ background: "var(--card)", border: "1px solid rgba(107,63,160,0.4)" }}>
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
@@ -79,6 +83,9 @@ export default function CartModal() {
                 <p className="text-sm font-semibold text-white line-clamp-2" style={{ fontFamily: "var(--font-syne)" }}>
                   {lastAdded.nom}
                 </p>
+                {lastAddedVariantNom && (
+                  <p className="text-xs text-[#9ca3af] mt-0.5">{lastAddedVariantNom}</p>
+                )}
                 <p className="price text-sm mt-1">
                   {previewPrice.toLocaleString("fr-DZ")}<span>DA</span>
                 </p>
@@ -110,6 +117,7 @@ export default function CartModal() {
               Continuer les achats
             </button>
           </div>
+        </div>
         </div>
       </div>
     </>

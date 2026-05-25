@@ -10,38 +10,37 @@ import {
 } from "react";
 import type { CartItem, Product, AbonnementOption } from "@/lib/types";
 
+function makeCartKey(productId: string, variantKey?: string, option?: AbonnementOption) {
+  return `${productId}:${variantKey ?? ""}:${option ?? ""}`;
+}
+
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
   lastAdded: Product | null;
+  lastAddedVariantNom?: string;
 }
 
 type CartAction =
-  | { type: "ADD_ITEM"; product: Product; optionAbonnement?: AbonnementOption }
-  | { type: "REMOVE_ITEM"; productId: string }
-  | { type: "UPDATE_QUANTITY"; productId: string; quantity: number }
-  | { type: "UPDATE_OPTION"; productId: string; optionAbonnement: AbonnementOption }
+  | { type: "ADD_ITEM"; product: Product; optionAbonnement?: AbonnementOption; variantKey?: string; variantNom?: string; variantPrix?: number }
+  | { type: "REMOVE_ITEM"; cartKey: string }
+  | { type: "UPDATE_QUANTITY"; cartKey: string; quantity: number }
+  | { type: "UPDATE_OPTION"; cartKey: string; optionAbonnement: AbonnementOption }
   | { type: "CLEAR_CART" }
-  | { type: "OPEN_MODAL"; product: Product }
+  | { type: "OPEN_MODAL"; product: Product; variantNom?: string }
   | { type: "CLOSE_MODAL" }
   | { type: "HYDRATE"; items: CartItem[] };
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "ADD_ITEM": {
-      const existing = state.items.find(
-        (i) =>
-          i.product._id === action.product._id &&
-          i.optionAbonnement === action.optionAbonnement
-      );
+      const cartKey = makeCartKey(action.product._id, action.variantKey, action.optionAbonnement);
+      const existing = state.items.find((i) => i.cartKey === cartKey);
       if (existing) {
         return {
           ...state,
           items: state.items.map((i) =>
-            i.product._id === action.product._id &&
-            i.optionAbonnement === action.optionAbonnement
-              ? { ...i, quantity: i.quantity + 1 }
-              : i
+            i.cartKey === cartKey ? { ...i, quantity: i.quantity + 1 } : i
           ),
         };
       }
@@ -50,46 +49,40 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         items: [
           ...state.items,
           {
+            cartKey,
             product: action.product,
             quantity: 1,
             optionAbonnement: action.optionAbonnement,
+            variantKey: action.variantKey,
+            variantNom: action.variantNom,
+            variantPrix: action.variantPrix,
           },
         ],
       };
     }
     case "REMOVE_ITEM":
-      return {
-        ...state,
-        items: state.items.filter((i) => i.product._id !== action.productId),
-      };
+      return { ...state, items: state.items.filter((i) => i.cartKey !== action.cartKey) };
     case "UPDATE_QUANTITY":
       if (action.quantity <= 0) {
-        return {
-          ...state,
-          items: state.items.filter((i) => i.product._id !== action.productId),
-        };
+        return { ...state, items: state.items.filter((i) => i.cartKey !== action.cartKey) };
       }
       return {
         ...state,
         items: state.items.map((i) =>
-          i.product._id === action.productId
-            ? { ...i, quantity: action.quantity }
-            : i
+          i.cartKey === action.cartKey ? { ...i, quantity: action.quantity } : i
         ),
       };
     case "UPDATE_OPTION":
       return {
         ...state,
         items: state.items.map((i) =>
-          i.product._id === action.productId
-            ? { ...i, optionAbonnement: action.optionAbonnement }
-            : i
+          i.cartKey === action.cartKey ? { ...i, optionAbonnement: action.optionAbonnement } : i
         ),
       };
     case "CLEAR_CART":
       return { ...state, items: [] };
     case "OPEN_MODAL":
-      return { ...state, isOpen: true, lastAdded: action.product };
+      return { ...state, isOpen: true, lastAdded: action.product, lastAddedVariantNom: action.variantNom };
     case "CLOSE_MODAL":
       return { ...state, isOpen: false };
     case "HYDRATE":
@@ -99,19 +92,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
   }
 }
 
-const initialState: CartState = {
-  items: [],
-  isOpen: false,
-  lastAdded: null,
-};
+const initialState: CartState = { items: [], isOpen: false, lastAdded: null };
 
 interface CartContextValue extends CartState {
-  addItem: (product: Product, optionAbonnement?: AbonnementOption) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  updateOption: (productId: string, optionAbonnement: AbonnementOption) => void;
+  addItem: (product: Product, optionAbonnement?: AbonnementOption, variantKey?: string, variantNom?: string, variantPrix?: number) => void;
+  removeItem: (cartKey: string) => void;
+  updateQuantity: (cartKey: string, quantity: number) => void;
+  updateOption: (cartKey: string, optionAbonnement: AbonnementOption) => void;
   clearCart: () => void;
-  openModal: (product: Product) => void;
+  openModal: (product: Product, variantNom?: string) => void;
   closeModal: () => void;
   totalItems: number;
   totalPrice: number;
@@ -125,9 +114,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem("tx-cart");
-      if (stored) {
-        dispatch({ type: "HYDRATE", items: JSON.parse(stored) });
-      }
+      if (stored) dispatch({ type: "HYDRATE", items: JSON.parse(stored) });
     } catch {}
   }, []);
 
@@ -136,37 +123,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [state.items]);
 
   const addItem = useCallback(
-    (product: Product, optionAbonnement?: AbonnementOption) =>
-      dispatch({ type: "ADD_ITEM", product, optionAbonnement }),
+    (product: Product, optionAbonnement?: AbonnementOption, variantKey?: string, variantNom?: string, variantPrix?: number) =>
+      dispatch({ type: "ADD_ITEM", product, optionAbonnement, variantKey, variantNom, variantPrix }),
     []
   );
   const removeItem = useCallback(
-    (productId: string) => dispatch({ type: "REMOVE_ITEM", productId }),
+    (cartKey: string) => dispatch({ type: "REMOVE_ITEM", cartKey }),
     []
   );
   const updateQuantity = useCallback(
-    (productId: string, quantity: number) =>
-      dispatch({ type: "UPDATE_QUANTITY", productId, quantity }),
+    (cartKey: string, quantity: number) => dispatch({ type: "UPDATE_QUANTITY", cartKey, quantity }),
     []
   );
   const updateOption = useCallback(
-    (productId: string, optionAbonnement: AbonnementOption) =>
-      dispatch({ type: "UPDATE_OPTION", productId, optionAbonnement }),
+    (cartKey: string, optionAbonnement: AbonnementOption) =>
+      dispatch({ type: "UPDATE_OPTION", cartKey, optionAbonnement }),
     []
   );
   const clearCart = useCallback(() => dispatch({ type: "CLEAR_CART" }), []);
   const openModal = useCallback(
-    (product: Product) => dispatch({ type: "OPEN_MODAL", product }),
+    (product: Product, variantNom?: string) => dispatch({ type: "OPEN_MODAL", product, variantNom }),
     []
   );
   const closeModal = useCallback(() => dispatch({ type: "CLOSE_MODAL" }), []);
 
   const totalItems = state.items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = state.items.reduce((sum, i) => {
-    const unitPrice =
-      i.optionAbonnement === "box-abonnement" && i.product.prixAbonnement
-        ? i.product.prixAbonnement
-        : i.product.prix;
+    let unitPrice: number;
+    if (i.variantPrix !== undefined) {
+      unitPrice = i.variantPrix;
+    } else {
+      const today = new Date().toISOString().split("T")[0];
+      const promoActive =
+        !!i.product.prixPromo &&
+        i.product.prixPromo < i.product.prix &&
+        (!i.product.dateFinPromo || i.product.dateFinPromo >= today);
+      const prixBase = promoActive ? i.product.prixPromo! : i.product.prix;
+      unitPrice =
+        i.optionAbonnement === "box-abonnement" && i.product.prixAvecAbonnement
+          ? i.product.prixAvecAbonnement
+          : prixBase;
+    }
     return sum + unitPrice * i.quantity;
   }, 0);
 

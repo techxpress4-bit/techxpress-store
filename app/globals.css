@@ -248,23 +248,4 @@ h1, h2, h3, h4, h5, h6 {
   html { font-size: 18px; }
 }
 
-/* Mobile : cartes beige/crème avec mix-blend pour images fond blanc */
-@media (max-width: 639px) {
-  .card-product {
-    background: linear-gradient(135deg, #f7f3ee 0%, #f0ebe1 100%);
-    border: 1px solid rgba(180,160,140,0.3);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-  }
-  .card-product:hover {
-    border-color: rgba(107,63,160,0.3);
-    box-shadow: 0 8px 30px rgba(107,63,160,0.15), 0 2px 12px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-  }
-  .card-product-img {
-    mix-blend-mode: multiply;
-  }
-  .price {
-    color: var(--violet);
-  }
-}
 

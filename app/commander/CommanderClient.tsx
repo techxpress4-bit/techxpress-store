@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { wilayas } from "@/lib/wilayas";
 import type { AbonnementOption } from "@/lib/types";
 import toast from "react-hot-toast";
+import { createClient } from "@/lib/supabase/client";
 
 const abonnementLabels: Record<AbonnementOption, string> = {
   "box-seule": "Box seule",
@@ -16,16 +17,36 @@ export default function CommanderClient() {
   const router = useRouter();
   const { items, totalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [form, setForm] = useState({
     prenom: "",
     nom: "",
     adresse: "",
     telephone: "",
     wilaya: "",
+    email: "",
     message: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        if (data.user?.email) {
+          setLoggedInEmail(data.user.email);
+          setUserId(data.user.id);
+        }
+        setAuthReady(true);
+      })
+      .catch(() => setAuthReady(true));
+  }, []);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -36,10 +57,14 @@ export default function CommanderClient() {
       return;
     }
 
-    // Validation téléphone algérien : 05/06/07 + 8 chiffres ou +213
+    const email = loggedInEmail ?? form.email.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Adresse e-mail invalide");
+      return;
+    }
+
     const phoneClean = form.telephone.replace(/\s|-|\./g, "");
-    const phoneOk = /^(?:0[567]\d{8}|\+213[567]\d{8})$/.test(phoneClean);
-    if (!phoneOk) {
+    if (!/^(?:0[567]\d{8}|\+213[567]\d{8})$/.test(phoneClean)) {
       toast.error("Numéro de téléphone invalide (ex : 05XXXXXXXX)");
       return;
     }
@@ -49,7 +74,14 @@ export default function CommanderClient() {
       const res = await fetch("/api/commande", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, telephone: phoneClean, items, totalPrice }),
+        body: JSON.stringify({
+          ...form,
+          telephone: phoneClean,
+          email,
+          userId: userId ?? undefined,
+          items,
+          totalPrice,
+        }),
       });
 
       if (!res.ok) throw new Error("Erreur serveur");
@@ -148,6 +180,41 @@ export default function CommanderClient() {
                 />
               </div>
 
+              {/* Email */}
+              <div className="mt-4">
+                <label className="block text-xs font-medium text-[#9ca3af] mb-1.5 flex items-center gap-2">
+                  Email *
+                  {loggedInEmail && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: "rgba(107,63,160,0.2)", color: "var(--violet-light)" }}>
+                      Compte connecté
+                    </span>
+                  )}
+                </label>
+                {loggedInEmail ? (
+                  <div
+                    className="flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm"
+                    style={{ background: "rgba(107,63,160,0.08)", border: "1px solid rgba(107,63,160,0.25)" }}
+                  >
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "var(--violet-light)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span className="text-[#f5f5f5]">{loggedInEmail}</span>
+                  </div>
+                ) : (
+                  <input
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    required
+                    placeholder="votre@email.com"
+                    className="input-field"
+                    disabled={!authReady}
+                  />
+                )}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Téléphone *</label>
@@ -201,13 +268,13 @@ export default function CommanderClient() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p>
-                Après validation, notre équipe vous contactera sous <strong className="text-white">24h</strong> pour confirmer votre commande et organiser la livraison. <strong className="text-white">Paiement à la livraison uniquement.</strong>
+                Un récapitulatif sera envoyé à votre adresse email. Notre équipe vous contactera sous <strong className="text-white">24h</strong> pour confirmer la livraison. <strong className="text-white">Paiement à la livraison uniquement.</strong>
               </p>
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !authReady}
               className="btn-primary w-full justify-center text-base py-4"
             >
               {loading ? (
@@ -239,10 +306,13 @@ export default function CommanderClient() {
 
               <div className="space-y-3 mb-5">
                 {items.map((item) => {
+                  const today = new Date().toISOString().split("T")[0];
+                  const promoActive = !!item.product.prixPromo && item.product.prixPromo < item.product.prix &&
+                    (!item.product.dateFinPromo || item.product.dateFinPromo >= today);
                   const unitPrice =
-                    item.optionAbonnement === "box-abonnement" && item.product.prixAbonnement
-                      ? item.product.prixAbonnement
-                      : item.product.prix;
+                    item.optionAbonnement === "box-abonnement" && item.product.prixAvecAbonnement
+                      ? item.product.prixAvecAbonnement
+                      : promoActive ? item.product.prixPromo! : item.product.prix;
                   return (
                     <div key={`${item.product._id}-${item.optionAbonnement}`} className="flex justify-between gap-3 text-sm">
                       <div className="flex-1 min-w-0">

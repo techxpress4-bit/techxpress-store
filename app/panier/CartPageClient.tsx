@@ -67,13 +67,17 @@ export default function CartPageClient() {
                 item.product.photos?.[0]
                   ? urlFor(item.product.photos[0]).width(200).height(200).url()
                   : null;
-              const unitPrice =
-                item.optionAbonnement === "box-abonnement" && item.product.prixAbonnement
-                  ? item.product.prixAbonnement
-                  : item.product.prix;
+              const today = new Date().toISOString().split("T")[0];
+              const promoActive = !!item.product.prixPromo && item.product.prixPromo < item.product.prix &&
+                (!item.product.dateFinPromo || item.product.dateFinPromo >= today);
+              const prixBase = promoActive ? item.product.prixPromo! : item.product.prix;
+              const unitPrice = item.variantPrix
+                ?? (item.optionAbonnement === "box-abonnement" && item.product.prixAvecAbonnement
+                  ? item.product.prixAvecAbonnement
+                  : prixBase);
 
               return (
-                <div key={`${item.product._id}-${item.optionAbonnement}`} className="card p-5 flex gap-5">
+                <div key={item.cartKey} className="card p-5 flex gap-5">
                   {/* Image */}
                   <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-[#111]">
                     {imageUrl ? (
@@ -92,14 +96,17 @@ export default function CartPageClient() {
                     <Link href={`/produit/${item.product.slug.current}`} className="text-sm font-semibold text-white hover:text-[#c084fc] transition-colors line-clamp-2 block" style={{ fontFamily: "var(--font-syne)" }}>
                       {item.product.nom}
                     </Link>
+                    {item.variantNom && (
+                      <p className="text-xs text-[#9ca3af] mt-0.5">{item.variantNom}</p>
+                    )}
 
                     {/* Abonnement option */}
-                    {item.product.optionAbonnement && (
+                    {item.product.optionAbonnement && !item.variantKey && (
                       <div className="flex gap-2 mt-2">
                         {(["box-seule", "box-abonnement"] as AbonnementOption[]).map((opt) => (
                           <button
                             key={opt}
-                            onClick={() => updateOption(item.product._id, opt)}
+                            onClick={() => updateOption(item.cartKey, opt)}
                             className={`text-xs px-2.5 py-1 rounded-lg transition-all ${
                               item.optionAbonnement === opt
                                 ? "text-white"
@@ -117,7 +124,7 @@ export default function CartPageClient() {
                       {/* Quantity */}
                       <div className="flex items-center gap-1 rounded-lg overflow-hidden" style={{ border: "1px solid var(--border)" }}>
                         <button
-                          onClick={() => updateQuantity(item.product._id, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
                           aria-label="Diminuer la quantité"
                           className="w-8 h-8 flex items-center justify-center text-[#9ca3af] hover:text-white hover:bg-[#2a2a2a] transition-colors text-lg"
                         >
@@ -127,7 +134,7 @@ export default function CartPageClient() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.product._id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
                           aria-label="Augmenter la quantité"
                           className="w-8 h-8 flex items-center justify-center text-[#9ca3af] hover:text-white hover:bg-[#2a2a2a] transition-colors text-lg"
                         >
@@ -141,7 +148,7 @@ export default function CartPageClient() {
                       </p>
 
                       <button
-                        onClick={() => removeItem(item.product._id)}
+                        onClick={() => removeItem(item.cartKey)}
                         className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6b7280] hover:text-red-400 hover:bg-[#2a2a2a] transition-colors"
                         aria-label="Supprimer"
                       >
@@ -165,15 +172,21 @@ export default function CartPageClient() {
 
               <div className="space-y-3 mb-5">
                 {items.map((item) => {
-                  const unitPrice =
-                    item.optionAbonnement === "box-abonnement" && item.product.prixAbonnement
-                      ? item.product.prixAbonnement
-                      : item.product.prix;
+                  const today2 = new Date().toISOString().split("T")[0];
+                  const promo2 = !!item.product.prixPromo && item.product.prixPromo < item.product.prix &&
+                    (!item.product.dateFinPromo || item.product.dateFinPromo >= today2);
+                  const unitPrice = item.variantPrix
+                    ?? (item.optionAbonnement === "box-abonnement" && item.product.prixAvecAbonnement
+                      ? item.product.prixAvecAbonnement
+                      : promo2 ? item.product.prixPromo! : item.product.prix);
                   return (
-                    <div key={`${item.product._id}-${item.optionAbonnement}`} className="flex justify-between text-sm">
+                    <div key={item.cartKey} className="flex justify-between text-sm">
                       <span className="text-[#9ca3af] line-clamp-1 flex-1 mr-2">
                         {item.product.nom} ×{item.quantity}
-                        {item.optionAbonnement && (
+                        {item.variantNom && (
+                          <span className="block text-xs text-[#6b7280]">{item.variantNom}</span>
+                        )}
+                        {item.optionAbonnement && !item.variantKey && (
                           <span className="block text-xs text-[#6b7280]">
                             {abonnementLabels[item.optionAbonnement]}
                           </span>

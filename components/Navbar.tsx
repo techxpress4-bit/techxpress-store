@@ -384,7 +384,7 @@ export default function Navbar() {
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
                                 </svg>
                               </div>
-                              <span className="text-sm text-white font-medium flex-1 line-clamp-1">{p.nom}</span>
+                              <span className="text-sm text-white font-medium flex-1 min-w-0 truncate">{p.nom}</span>
                               <span className="text-xs font-semibold flex-shrink-0" style={{ color: "var(--violet-light)" }}>
                                 {p.prix.toLocaleString("fr-DZ")} DA
                               </span>
@@ -421,7 +421,7 @@ export default function Navbar() {
                       </div>
                     )}
                 </div>
-                <button type="submit" className="btn-primary text-sm px-4 py-2.5 flex-shrink-0">
+                <button type="submit" className="hidden sm:inline-flex btn-primary text-sm px-4 py-2.5 flex-shrink-0">
                   Rechercher
                 </button>
                 <button type="button" onClick={closeSearch} className="text-[#6b7280] hover:text-white transition-colors p-1.5">
@@ -436,7 +436,7 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="lg:hidden border-t border-[#2a2a2a] bg-[#0a0a0a]/98 backdrop-blur-md">
+          <div className="lg:hidden border-t border-[#2a2a2a] bg-[#0a0a0a]">
             <nav className="max-w-7xl mx-auto px-4 py-4 space-y-1">
               <Link href="/" className="block px-4 py-2.5 rounded-xl text-sm text-[#9ca3af] hover:text-white hover:bg-[#161616] transition-colors" onClick={() => setMenuOpen(false)}>
                 Accueil

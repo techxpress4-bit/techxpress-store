@@ -14,6 +14,23 @@ interface Profile {
   newsletter_opt_in?: boolean;
 }
 
+interface Order {
+  id: string;
+  created_at: string;
+  wilaya: string;
+  total: number;
+  statut: string;
+  items: { product?: { nom?: string }; quantity?: number }[];
+}
+
+const statutLabels: Record<string, { label: string; color: string; bg: string }> = {
+  en_attente:   { label: "En attente",    color: "#fbbf24", bg: "rgba(251,191,36,0.1)" },
+  confirmee:    { label: "Confirmée",     color: "#34d399", bg: "rgba(52,211,153,0.1)" },
+  en_livraison: { label: "En livraison",  color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },
+  livree:       { label: "Livrée",        color: "#c084fc", bg: "rgba(192,132,252,0.1)" },
+  annulee:      { label: "Annulée",       color: "#f87171", bg: "rgba(248,113,113,0.1)" },
+};
+
 export default function AccountClient() {
   const router = useRouter();
   const supabase = createClient();
@@ -22,6 +39,7 @@ export default function AccountClient() {
   const [newsletter, setNewsletter] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<Order[] | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -44,8 +62,21 @@ export default function AccountClient() {
           setProfile(prof);
           setNewsletter(prof?.newsletter_opt_in ?? true);
         } catch {
-          // profil absent : on continue avec les valeurs par défaut
+          // profil absent : on continue
         }
+
+        try {
+          const { data: orderRows } = await supabase
+            .from("commandes")
+            .select("id, created_at, wilaya, total, statut, items")
+            .eq("user_id", data.user.id)
+            .order("created_at", { ascending: false })
+            .limit(20);
+          if (active) setOrders(orderRows ?? []);
+        } catch {
+          if (active) setOrders([]);
+        }
+
         if (active) setLoading(false);
       })
       .catch(() => {
@@ -62,7 +93,6 @@ export default function AccountClient() {
     setSaving(true);
     const next = !newsletter;
     setNewsletter(next);
-    // upsert : crée le profil s'il n'existe pas encore, sinon le met à jour
     const { error } = await supabase
       .from("profiles")
       .upsert(
@@ -137,6 +167,71 @@ export default function AccountClient() {
                 </div>
               ))}
             </dl>
+          </div>
+
+          {/* Mes commandes */}
+          <div className="card p-6">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#9ca3af] mb-5" style={{ fontFamily: "var(--font-syne)" }}>
+              Mes commandes
+            </h2>
+
+            {orders === null ? (
+              <p className="text-sm text-[#6b7280]">Chargement…</p>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-sm text-[#6b7280] mb-3">Aucune commande pour le moment</p>
+                <Link href="/catalogue" className="text-xs font-semibold" style={{ color: "var(--violet-light)" }}>
+                  Explorer le catalogue →
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {orders.map((order) => {
+                  const statut = statutLabels[order.statut] ?? { label: order.statut, color: "#9ca3af", bg: "rgba(156,163,175,0.1)" };
+                  const date = new Date(order.created_at).toLocaleDateString("fr-FR", {
+                    day: "2-digit", month: "short", year: "numeric",
+                  });
+                  const itemCount = Array.isArray(order.items)
+                    ? order.items.reduce((s, i) => s + (Number(i.quantity) || 1), 0)
+                    : 0;
+                  return (
+                    <div
+                      key={order.id}
+                      className="rounded-xl p-4"
+                      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                          <p className="text-xs text-[#6b7280]">{date}</p>
+                          <p className="text-sm font-semibold text-white mt-0.5">
+                            {order.wilaya} — {itemCount} article{itemCount > 1 ? "s" : ""}
+                          </p>
+                        </div>
+                        <span
+                          className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
+                          style={{ color: statut.color, background: statut.bg }}
+                        >
+                          {statut.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-[#6b7280] space-y-0.5">
+                          {Array.isArray(order.items) && order.items.slice(0, 2).map((item, idx) => (
+                            <p key={idx}>{item.product?.nom ?? "Produit"} ×{item.quantity ?? 1}</p>
+                          ))}
+                          {Array.isArray(order.items) && order.items.length > 2 && (
+                            <p>+{order.items.length - 2} autre{order.items.length - 2 > 1 ? "s" : ""}</p>
+                          )}
+                        </div>
+                        <p className="text-sm font-bold" style={{ color: "var(--violet-light)" }}>
+                          {Number(order.total).toLocaleString("fr-DZ")} DA
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Newsletter */}
