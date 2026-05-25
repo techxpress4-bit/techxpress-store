@@ -1,12 +1,12 @@
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
 import { visionTool } from "@sanity/vision";
-import { schemas } from "@/sanity/schemas";
+import { schemas } from "./sanity/schemas";
 
 export default defineConfig({
   name: "techxpress",
   title: "Tech Xpress — Back Office",
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "gdccl23z",
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || "production",
   plugins: [
     structureTool({
@@ -31,7 +31,16 @@ export default defineConfig({
                       ),
                     S.divider(),
                     S.listItem()
-                      .title("⭐  Produits vedettes")
+                      .title("⭐  Best Sellers (ordre & sélection)")
+                      .id("bestSellers")
+                      .child(
+                        S.document()
+                          .schemaType("bestSellers")
+                          .documentId("bestSellers")
+                          .title("Best Sellers")
+                      ),
+                    S.listItem()
+                      .title("🏷️  Produits vedettes (filtré)")
                       .child(
                         S.documentList()
                           .title("Produits vedettes")

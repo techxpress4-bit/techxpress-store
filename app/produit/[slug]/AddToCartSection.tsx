@@ -2,55 +2,164 @@
 
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
-import type { Product, AbonnementOption } from "@/lib/types";
+import type { Product, AbonnementOption, Variante } from "@/lib/types";
 
 interface Props {
   product: Product;
+  onVariantChange?: (variant: Variante | null) => void;
 }
 
-export default function AddToCartSection({ product }: Props) {
+function isPromoActive(product: Product): boolean {
+  if (!product.prixPromo || product.prixPromo >= product.prix) return false;
+  if (!product.dateFinPromo) return true;
+  return product.dateFinPromo >= new Date().toISOString().split("T")[0];
+}
+
+function isVariantPromoActive(v: Variante): boolean {
+  if (!v.prixPromo || v.prixPromo >= v.prix) return false;
+  if (!v.dateFinPromo) return true;
+  return v.dateFinPromo >= new Date().toISOString().split("T")[0];
+}
+
+export default function AddToCartSection({ product, onVariantChange }: Props) {
   const { addItem, openModal } = useCart();
   const [option, setOption] = useState<AbonnementOption>("box-seule");
+  const [selectedVariant, setSelectedVariant] = useState<Variante | null>(
+    product.variantes?.[0] ?? null
+  );
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") || "";
 
+  const hasVariants = product.variantes && product.variantes.length > 0;
+  const promo = isPromoActive(product);
+  const variantPromo = !!(hasVariants && selectedVariant && isVariantPromoActive(selectedVariant));
+
+  const prix = hasVariants && selectedVariant
+    ? (variantPromo ? selectedVariant.prixPromo! : selectedVariant.prix)
+    : promo ? product.prixPromo! : product.prix;
+
   const prixActuel =
-    product.optionAbonnement && option === "box-abonnement" && product.prixAbonnement
-      ? product.prixAbonnement
-      : product.prix;
+    !hasVariants && product.optionAbonnement && option === "box-abonnement" && product.prixAvecAbonnement
+      ? product.prixAvecAbonnement
+      : prix;
+
+  const enStockEffectif = hasVariants && selectedVariant
+    ? selectedVariant.enStock !== false
+    : product.enStock;
+
+  function handleSelectVariant(v: Variante) {
+    setSelectedVariant(v);
+    onVariantChange?.(v);
+  }
 
   const handleAddToCart = () => {
-    if (!product.enStock) return;
-    const selectedOption = product.optionAbonnement ? option : undefined;
-    addItem(product, selectedOption);
-    openModal(product);
+    if (!enStockEffectif) return;
+    const selectedOption = !hasVariants && product.optionAbonnement ? option : undefined;
+    const variantUnitPrice = hasVariants && selectedVariant
+      ? (variantPromo ? selectedVariant.prixPromo! : selectedVariant.prix)
+      : undefined;
+    addItem(
+      product,
+      selectedOption,
+      selectedVariant?._key,
+      selectedVariant?.nom,
+      variantUnitPrice
+    );
+    openModal(product, selectedVariant?.nom);
 
     const w = typeof window !== "undefined" ? (window as { gtag?: (...args: unknown[]) => void }) : null;
     if (w?.gtag) {
       w.gtag("event", "add_to_cart", {
         currency: "DZD",
         value: prixActuel,
-        items: [{ item_id: product._id, item_name: product.nom, price: prixActuel }],
+        items: [{ item_id: product._id, item_name: product.nom, item_variant: selectedVariant?.nom, price: prixActuel }],
       });
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* Prix dynamique */}
-      <div className="flex items-baseline gap-3">
-        <p className="price text-4xl">
+      {/* Prix */}
+      <div className="flex items-baseline gap-3 flex-wrap">
+        {promo && !hasVariants && option !== "box-abonnement" && (
+          <span className="text-xl text-[#6b7280] line-through">
+            {product.prix.toLocaleString("fr-DZ")} DA
+          </span>
+        )}
+        {variantPromo && selectedVariant && (
+          <span className="text-xl text-[#6b7280] line-through">
+            {selectedVariant.prix.toLocaleString("fr-DZ")} DA
+          </span>
+        )}
+        <p className={`price text-4xl ${
+          ((promo && !hasVariants && option !== "box-abonnement") || variantPromo)
+            ? "text-red-400"
+            : ""
+        }`}>
           {prixActuel.toLocaleString("fr-DZ")}
           <span className="text-xl">DA</span>
         </p>
-        {product.optionAbonnement && product.prixAbonnement && option === "box-seule" && (
-          <span className="text-sm text-[#6b7280]">
-            ou {product.prixAbonnement.toLocaleString("fr-DZ")} DA avec abonnement
-          </span>
-        )}
       </div>
 
-      {/* Options abonnement */}
-      {product.optionAbonnement && (
+      {/* Sélecteur de déclinaisons */}
+      {hasVariants && product.variantes && (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#9ca3af] mb-3" style={{ fontFamily: "var(--font-syne)" }}>
+            Déclinaison
+          </p>
+          <div className="flex flex-wrap gap-2.5 mb-2">
+            {product.variantes.map((v) => {
+              const isSelected = selectedVariant?._key === v._key;
+              const isOutOfStock = v.enStock === false;
+              if (v.couleur) {
+                return (
+                  <button
+                    key={v._key}
+                    onClick={() => handleSelectVariant(v)}
+                    title={v.nom}
+                    disabled={isOutOfStock}
+                    className="relative w-8 h-8 rounded-full transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{
+                      background: v.couleur,
+                      outline: isSelected ? "2px solid var(--violet)" : "2px solid transparent",
+                      outlineOffset: "2px",
+                      boxShadow: "0 0 0 1px rgba(255,255,255,0.1)",
+                    }}
+                  />
+                );
+              }
+              return (
+                <button
+                  key={v._key}
+                  onClick={() => handleSelectVariant(v)}
+                  disabled={isOutOfStock}
+                  className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
+                    isSelected
+                      ? "text-white border-2"
+                      : "text-[#d1d5db] border-2 hover:border-[#4a4a4a]"
+                  }`}
+                  style={{
+                    background: isSelected ? "rgba(107,63,160,0.18)" : "var(--surface)",
+                    borderColor: isSelected ? "var(--violet)" : "var(--border)",
+                  }}
+                >
+                  {v.nom}
+                </button>
+              );
+            })}
+          </div>
+          {selectedVariant && (
+            <p className="text-xs text-[#9ca3af]">
+              <span className="text-white font-medium">{selectedVariant.nom}</span>
+              {selectedVariant.enStock === false && (
+                <span className="text-red-400 ml-2">• Rupture de stock</span>
+              )}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Options abonnement (uniquement si pas de variantes) */}
+      {!hasVariants && product.optionAbonnement && (
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-[#9ca3af] mb-3" style={{ fontFamily: "var(--font-syne)" }}>
             Choisir une option
@@ -58,11 +167,7 @@ export default function AddToCartSection({ product }: Props) {
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => setOption("box-seule")}
-              className={`flex-1 p-4 rounded-xl text-left transition-all duration-200 ${
-                option === "box-seule"
-                  ? "border-2 border-violet"
-                  : "border border-[#2a2a2a] hover:border-[#4a4a4a]"
-              }`}
+              className={`flex-1 p-4 rounded-xl text-left transition-all duration-200 ${option === "box-seule" ? "border-2 border-violet" : "border border-[#2a2a2a] hover:border-[#4a4a4a]"}`}
               style={{ background: option === "box-seule" ? "rgba(107,63,160,0.12)" : "var(--surface)" }}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -72,18 +177,17 @@ export default function AddToCartSection({ product }: Props) {
                 <span className="text-sm font-semibold text-white">Box seule</span>
               </div>
               <p className="text-xs text-[#6b7280] ml-6">Sans abonnement TV inclus</p>
-              <p className="text-sm font-bold mt-2 ml-6" style={{ color: "var(--violet-light)" }}>
-                {product.prix.toLocaleString("fr-DZ")} DA
-              </p>
+              <div className="mt-2 ml-6 flex items-baseline gap-2">
+                {promo && <span className="text-xs text-[#6b7280] line-through">{product.prix.toLocaleString("fr-DZ")} DA</span>}
+                <p className={`text-sm font-bold ${promo ? "text-red-400" : ""}`} style={promo ? {} : { color: "var(--violet-light)" }}>
+                  {(promo ? product.prixPromo! : product.prix).toLocaleString("fr-DZ")} DA
+                </p>
+              </div>
             </button>
 
             <button
               onClick={() => setOption("box-abonnement")}
-              className={`flex-1 p-4 rounded-xl text-left transition-all duration-200 relative ${
-                option === "box-abonnement"
-                  ? "border-2 border-violet"
-                  : "border border-[#2a2a2a] hover:border-[#4a4a4a]"
-              }`}
+              className={`flex-1 p-4 rounded-xl text-left transition-all duration-200 relative ${option === "box-abonnement" ? "border-2 border-violet" : "border border-[#2a2a2a] hover:border-[#4a4a4a]"}`}
               style={{ background: option === "box-abonnement" ? "rgba(107,63,160,0.12)" : "var(--surface)" }}
             >
               <div className="absolute top-2 right-2">
@@ -99,9 +203,7 @@ export default function AddToCartSection({ product }: Props) {
               </div>
               <p className="text-xs text-[#6b7280] ml-6">Abonnement TV 12 mois inclus</p>
               <p className="text-sm font-bold mt-2 ml-6" style={{ color: "var(--violet-light)" }}>
-                {product.prixAbonnement
-                  ? `${product.prixAbonnement.toLocaleString("fr-DZ")} DA`
-                  : "Prix sur demande"}
+                {product.prixAvecAbonnement ? `${product.prixAvecAbonnement.toLocaleString("fr-DZ")} DA` : "Prix sur demande"}
               </p>
             </button>
           </div>
@@ -111,24 +213,22 @@ export default function AddToCartSection({ product }: Props) {
       {/* Bouton panier */}
       <button
         onClick={handleAddToCart}
-        disabled={!product.enStock}
+        disabled={!enStockEffectif}
         className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-200 ${
-          product.enStock
-            ? "btn-primary hover:scale-[1.02]"
-            : "opacity-40 cursor-not-allowed"
+          enStockEffectif ? "btn-primary hover:scale-[1.02]" : "opacity-40 cursor-not-allowed"
         }`}
-        style={product.enStock ? {} : { background: "var(--surface)", border: "1px solid var(--border)" }}
+        style={enStockEffectif ? {} : { background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
         </svg>
-        {product.enStock ? "Ajouter au panier" : "Rupture de stock"}
+        {enStockEffectif ? "Ajouter au panier" : "Rupture de stock"}
       </button>
 
       {/* WhatsApp */}
       {whatsapp && (
         <a
-          href={`https://wa.me/${whatsapp}?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20produit%20%3A%20${encodeURIComponent(product.nom)}`}
+          href={`https://wa.me/${whatsapp}?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20produit%20%3A%20${encodeURIComponent(product.nom)}${selectedVariant ? "%20-%20" + encodeURIComponent(selectedVariant.nom) : ""}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 text-sm text-[#6b7280] hover:text-[#25D366] transition-colors py-2"

@@ -13,6 +13,17 @@ export interface FicheTechniqueItem {
   valeur: string;
 }
 
+export interface Variante {
+  _key: string;
+  nom: string;
+  couleur?: string;
+  prix: number;
+  prixPromo?: number;
+  dateFinPromo?: string;
+  photo?: SanityImage;
+  enStock?: boolean;
+}
+
 export interface Product {
   _id: string;
   _createdAt?: string;
@@ -20,10 +31,14 @@ export interface Product {
   slug: { current: string };
   categorie: { nom: string; slug: { current: string } };
   photos: SanityImage[];
+  variantes?: Variante[];
+  varianteCover?: SanityImage;
   description?: PortableTextBlock[];
   ficheTechnique?: FicheTechniqueItem[];
   prix: number;
-  prixAbonnement?: number;
+  prixAvecAbonnement?: number;
+  prixPromo?: number;
+  dateFinPromo?: string;
   enStock: boolean;
   optionAbonnement: boolean;
   featured: boolean;
@@ -48,9 +63,13 @@ export type PortableTextBlock = {
 export type AbonnementOption = "box-seule" | "box-abonnement";
 
 export interface CartItem {
+  cartKey: string;
   product: Product;
   quantity: number;
   optionAbonnement?: AbonnementOption;
+  variantKey?: string;
+  variantNom?: string;
+  variantPrix?: number;
 }
 
 export interface OrderFormData {
