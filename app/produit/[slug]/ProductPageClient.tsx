@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { client as sanityClient } from "@/lib/sanity";
+import { PortableText } from "@portabletext/react";
+import type { Product, Variante } from "@/lib/types";
+import { sanityFetch } from "@/lib/sanity";
 import { productBySlugQuery } from "@/lib/queries";
-import type { Product } from "@/lib/types";
 import ProductImageGallery from "./ProductImageGallery";
 import AddToCartSection from "./AddToCartSection";
+import ReviewSection from "@/components/ReviewSection";
 
 export default function ProductPageClient() {
   const params = useParams();
@@ -16,16 +18,16 @@ export default function ProductPageClient() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<Variante | null>(null);
 
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
-    sanityClient
-      .withConfig({ useCdn: false })
-      .fetch<Product>(productBySlugQuery, { slug })
+    sanityFetch<Product | null>(productBySlugQuery, { slug })
       .then((data) => {
-        if (!data) setNotFound(true);
-        else setProduct(data);
+        if (!data) { setNotFound(true); return; }
+        setProduct(data);
+        setSelectedVariant(data.variantes?.[0] ?? null);
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
@@ -46,7 +48,10 @@ export default function ProductPageClient() {
     );
   }
 
-  const images = product.photos || [];
+  const images =
+    selectedVariant?.photo
+      ? [selectedVariant.photo]
+      : product.photos || [];
 
   return (
     <div className="pt-24 pb-20 min-h-screen">
@@ -103,7 +108,7 @@ export default function ProductPageClient() {
               </div>
             )}
 
-            <AddToCartSection product={product} />
+            <AddToCartSection product={product} onVariantChange={setSelectedVariant} />
 
             {/* Fiche technique */}
             {product.ficheTechnique && product.ficheTechnique.length > 0 && (
@@ -128,13 +133,30 @@ export default function ProductPageClient() {
                 <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4" style={{ fontFamily: "var(--font-syne)" }}>
                   Description
                 </h3>
-                <div className="text-[#9ca3af] text-sm leading-relaxed space-y-3">
-                  {product.description.map((block) => {
-                    const b = block as { _type: string; _key: string; children?: { text?: string }[] };
-                    return b._type === "block" && b.children ? (
-                      <p key={b._key}>{b.children.map((c) => c.text ?? "").join("")}</p>
-                    ) : null;
-                  })}
+                <div className="text-sm leading-relaxed space-y-3">
+                  <PortableText
+                    value={product.description}
+                    components={{
+                      block: {
+                        normal: ({ children }) => <p className="text-[#9ca3af]">{children}</p>,
+                        h2: ({ children }) => <h2 className="text-base font-bold text-white mt-5 mb-1">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-sm font-semibold text-white mt-4 mb-1">{children}</h3>,
+                        h4: ({ children }) => <h4 className="text-sm font-semibold text-[#d1d5db] mt-3 mb-1">{children}</h4>,
+                      },
+                      list: {
+                        bullet: ({ children }) => <ul className="list-disc list-inside space-y-1 text-[#9ca3af] pl-2">{children}</ul>,
+                        number: ({ children }) => <ol className="list-decimal list-inside space-y-1 text-[#9ca3af] pl-2">{children}</ol>,
+                      },
+                      listItem: {
+                        bullet: ({ children }) => <li className="text-[#9ca3af]">{children}</li>,
+                        number: ({ children }) => <li className="text-[#9ca3af]">{children}</li>,
+                      },
+                      marks: {
+                        strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
+                        em: ({ children }) => <em className="italic text-[#9ca3af]">{children}</em>,
+                      },
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -155,6 +177,8 @@ export default function ProductPageClient() {
             </div>
           </div>
         </div>
+
+        <ReviewSection productSlug={product.slug.current} />
       </div>
     </div>
   );
