@@ -91,5 +91,4 @@ export default defineConfig({
     visionTool(),
   ],
   schema: { types: schemas },
-  basePath: "/studio",
 });
