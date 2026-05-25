@@ -31,6 +31,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://techxpressdz.com"),
   title: {
     default: "Tech Xpress — Électronique & Multimédia en Algérie",
     template: "%s | Tech Xpress",
@@ -45,6 +46,14 @@ export const metadata: Metadata = {
     "Tech Xpress",
     "livraison Algérie",
   ],
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "Tech Xpress — Électronique & Multimédia en Algérie",
     description:
@@ -52,6 +61,21 @@ export const metadata: Metadata = {
     siteName: "Tech Xpress",
     locale: "fr_DZ",
     type: "website",
+    url: "https://techxpressdz.com",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Tech Xpress — Électronique & Multimédia en Algérie",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tech Xpress — Électronique & Multimédia en Algérie",
+    description: "Boutique en ligne premium de produits tech en Algérie. Paiement à la livraison.",
+    images: ["/og-image.png"],
   },
 };
 

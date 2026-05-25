@@ -1,0 +1,16 @@
+{
+  "name": "Tech Xpress — Électronique & Multimédia",
+  "short_name": "Tech Xpress",
+  "description": "Boutique en ligne de produits tech en Algérie. Paiement à la livraison.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "lang": "fr-DZ",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

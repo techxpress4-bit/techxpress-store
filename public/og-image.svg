@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="orb1" cx="0%" cy="0%" r="60%">
+      <stop offset="0%" stop-color="#6b3fa0" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#0a0a0a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orb2" cx="100%" cy="100%" r="60%">
+      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#0a0a0a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="brand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5fc0"/>
+      <stop offset="50%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="#0a0a0a"/>
+  <rect width="1200" height="630" fill="url(#orb1)"/>
+  <rect width="1200" height="630" fill="url(#orb2)"/>
+
+  <g transform="translate(600, 145)">
+    <rect x="-260" y="-30" width="520" height="60" rx="30"
+          fill="rgba(107,63,160,0.18)" stroke="rgba(192,132,252,0.4)" stroke-width="2"/>
+    <circle cx="-220" cy="0" r="6" fill="#c084fc"/>
+    <text x="0" y="0" text-anchor="middle" dominant-baseline="middle"
+          font-family="system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"
+          font-size="22" font-weight="600" fill="#c084fc">
+      Livraison dans les 58 wilayas d'Algérie
+    </text>
+  </g>
+
+  <text x="600" y="350" text-anchor="middle"
+        font-family="system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="140" font-weight="900" letter-spacing="-6">
+    <tspan fill="#ffffff">Tech</tspan><tspan fill="url(#brand)">Xpress</tspan>
+  </text>
+
+  <text x="600" y="425" text-anchor="middle"
+        font-family="system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="36" font-weight="500" fill="#9ca3af">
+    Box TV Android, accessoires &amp; plus
+  </text>
+
+  <g transform="translate(600, 540)" text-anchor="middle"
+     font-family="system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"
+     font-size="22" fill="#d1d5db">
+    <g transform="translate(-310, 0)">
+      <text x="0" y="0" fill="#22c55e" font-size="26" font-weight="bold">✓</text>
+      <text x="30" y="0" text-anchor="start">Paiement à la livraison</text>
+    </g>
+    <g transform="translate(0, 0)">
+      <text x="-140" y="0" fill="#22c55e" font-size="26" font-weight="bold">✓</text>
+      <text x="-110" y="0" text-anchor="start">Produits garantis</text>
+    </g>
+    <g transform="translate(280, 0)">
+      <text x="-30" y="0" fill="#22c55e" font-size="26" font-weight="bold">✓</text>
+      <text x="0" y="0" text-anchor="start">Support WhatsApp</text>
+    </g>
+  </g>
+</svg>
