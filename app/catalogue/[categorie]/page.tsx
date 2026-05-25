@@ -1,10 +1,9 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { sanityFetch } from "@/lib/sanity";
-import { productsByCategoryQuery, categoryBySlugQuery, allCategoriesQuery } from "@/lib/queries";
+import { allProductsQuery, allCategoriesQuery, categoryBySlugQuery } from "@/lib/queries";
 import type { Product, Category } from "@/lib/types";
-import ProductCard from "@/components/ProductCard";
+import CatalogueClient from "../CatalogueClient";
 
 interface Props {
   params: Promise<{ categorie: string }>;
@@ -32,104 +31,17 @@ export default async function CategoryPage({ params }: Props) {
 
   const [cat, products, categories] = await Promise.all([
     sanityFetch<Category>(categoryBySlugQuery, { slug: categorie }),
-    sanityFetch<Product[]>(productsByCategoryQuery, { categorie }),
+    sanityFetch<Product[]>(allProductsQuery),
     sanityFetch<Category[]>(allCategoriesQuery),
   ]);
 
   if (!cat) notFound();
 
   return (
-    <div className="pt-24 pb-20 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-[#6b7280] mb-8">
-          <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
-          <span>/</span>
-          <Link href="/catalogue" className="hover:text-white transition-colors">Catalogue</Link>
-          <span>/</span>
-          <span className="text-white">{cat.nom}</span>
-        </nav>
-
-        {/* Header */}
-        <div className="mb-10">
-          {cat.icone && <span className="text-4xl mb-3 block">{cat.icone}</span>}
-          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--violet-light)" }}>
-            Catégorie
-          </p>
-          <h1 className="section-title mb-2">{cat.nom}</h1>
-          {cat.description && (
-            <p className="text-[#9ca3af] max-w-xl">{cat.description}</p>
-          )}
-          <p className="text-[#6b7280] text-sm mt-2">
-            {products.length} produit{products.length > 1 ? "s" : ""}
-          </p>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <aside className="lg:w-60 flex-shrink-0">
-            <div className="card p-5 sticky top-24">
-              <h3 className="text-sm font-bold text-white mb-4" style={{ fontFamily: "var(--font-syne)" }}>
-                Catégories
-              </h3>
-              <nav className="space-y-1">
-                <Link
-                  href="/catalogue"
-                  className="flex items-center px-3 py-2 rounded-lg text-sm text-[#9ca3af] hover:text-white hover:bg-[#1f1f1f] transition-colors"
-                >
-                  Tous les produits
-                </Link>
-                {categories.map((c) => (
-                  <Link
-                    key={c._id}
-                    href={`/catalogue/${c.slug.current}`}
-                    className={`flex items-center px-3 py-2 rounded-lg text-sm transition-colors ${
-                      c.slug.current === categorie
-                        ? "text-white font-medium"
-                        : "text-[#9ca3af] hover:text-white hover:bg-[#1f1f1f]"
-                    }`}
-                    style={
-                      c.slug.current === categorie
-                        ? { background: "rgba(107,63,160,0.2)", border: "1px solid rgba(107,63,160,0.3)" }
-                        : {}
-                    }
-                  >
-                    {c.nom}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-          </aside>
-
-          {/* Products grid */}
-          <div className="flex-1">
-            {products.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-                {products.map((product) => (
-                  <ProductCard key={product._id} product={product} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-20 h-20 rounded-2xl mb-6 flex items-center justify-center" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <svg className="w-10 h-10 text-[#4b5563]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2" style={{ fontFamily: "var(--font-syne)" }}>
-                  Aucun produit pour l&apos;instant
-                </h3>
-                <p className="text-[#6b7280] text-sm">
-                  Revenez bientôt ou consultez une autre catégorie.
-                </p>
-                <Link href="/catalogue" className="btn-secondary mt-4 text-sm">
-                  Voir tout le catalogue
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+    <CatalogueClient
+      products={products}
+      categories={categories}
+      currentCategorySlug={categorie}
+    />
   );
 }

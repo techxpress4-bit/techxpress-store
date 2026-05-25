@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, useState, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { Product, Category } from "@/lib/types";
 import ProductCard from "@/components/ProductCard";
 
@@ -15,25 +16,59 @@ const sortLabels: Record<SortOption, string> = {
   nouveau: "Nouveautés",
 };
 
+function isSort(v: string | null): v is SortOption {
+  return v === "default" || v === "price-asc" || v === "price-desc" || v === "name-asc" || v === "nouveau";
+}
+
 interface Props {
   products: Product[];
   categories: Category[];
+  currentCategorySlug?: string;
 }
 
-export default function CatalogueClient({ products, categories }: Props) {
-  const [sort, setSort] = useState<SortOption>("default");
-  const [searchQ, setSearchQ] = useState(() => {
-    if (typeof window !== "undefined") {
-      return new URLSearchParams(window.location.search).get("q") || "";
+export default function CatalogueClient(props: Props) {
+  return (
+    <Suspense fallback={null}>
+      <CatalogueInner {...props} />
+    </Suspense>
+  );
+}
+
+function CatalogueInner({ products, categories, currentCategorySlug }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const sortRaw = searchParams.get("sort");
+  const sort: SortOption = isSort(sortRaw) ? sortRaw : "default";
+  const searchQ = searchParams.get("q") || "";
+  const maxPriceRaw = Number(searchParams.get("max")) || 0;
+
+  function updateParam(key: string, value: string | null) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === null || value === "" || value === "0" || value === "default") {
+      params.delete(key);
+    } else {
+      params.set(key, value);
     }
-    return "";
-  });
-  const maxProductPrice = Math.max(...products.map((p) => p.prix), 0);
-  const [maxPrice, setMaxPrice] = useState<number>(0); // 0 = pas de filtre (slider au max)
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
+
+  // Filtre par catégorie active (si la page courante en a une)
+  const scopedProducts = useMemo(() => {
+    if (!currentCategorySlug) return products;
+    return products.filter((p) => p.categorie?.slug?.current === currentCategorySlug);
+  }, [products, currentCategorySlug]);
+
+  const maxProductPrice = useMemo(
+    () => Math.max(...scopedProducts.map((p) => p.prix), 0),
+    [scopedProducts]
+  );
+  const maxPrice = maxPriceRaw > 0 && maxPriceRaw < maxProductPrice ? maxPriceRaw : 0;
+
   const [filtersOpen, setFiltersOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Fermer le dropdown en cliquant dehors
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -45,7 +80,7 @@ export default function CatalogueClient({ products, categories }: Props) {
   }, [filtersOpen]);
 
   const sortedProducts = useMemo(() => {
-    let filtered = [...products];
+    let filtered = [...scopedProducts];
     if (searchQ.trim()) {
       const q = searchQ.toLowerCase();
       filtered = filtered.filter((p) =>
@@ -53,7 +88,7 @@ export default function CatalogueClient({ products, categories }: Props) {
         p.categorie?.nom?.toLowerCase().includes(q)
       );
     }
-    if (maxPrice > 0 && maxPrice < maxProductPrice) {
+    if (maxPrice > 0) {
       filtered = filtered.filter((p) => p.prix <= maxPrice);
     }
     switch (sort) {
@@ -63,34 +98,61 @@ export default function CatalogueClient({ products, categories }: Props) {
       case "nouveau": return filtered.sort((a, b) => (b.nouveaute ? 1 : 0) - (a.nouveaute ? 1 : 0));
       default: return filtered;
     }
-  }, [products, sort, searchQ, maxPrice, maxProductPrice]);
+  }, [scopedProducts, sort, searchQ, maxPrice]);
 
-  const activeFilterCount = [
-    sort !== "default",
-    maxPrice > 0 && maxPrice < maxProductPrice,
-  ].filter(Boolean).length;
-
+  const activeFilterCount = [sort !== "default", maxPrice > 0].filter(Boolean).length;
   const sliderValue = maxPrice > 0 ? maxPrice : maxProductPrice;
+
+  // Préserve les filtres quand on clique sur une catégorie dans la sidebar
+  function linkWithFilters(href: string) {
+    const qs = searchParams.toString();
+    return qs ? `${href}?${qs}` : href;
+  }
+
+  const activeCat = currentCategorySlug
+    ? categories.find((c) => c.slug.current === currentCategorySlug)
+    : null;
 
   return (
     <div className="pt-24 pb-20 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--violet-light)" }}>
-            Catalogue complet
-          </p>
-          <h1 className="section-title mb-2">Tous nos produits</h1>
-          <p className="text-[#6b7280]">
+          {activeCat ? (
+            <>
+              <nav className="flex items-center gap-2 text-sm text-[#6b7280] mb-4">
+                <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
+                <span>/</span>
+                <Link href={linkWithFilters("/catalogue")} className="hover:text-white transition-colors">Catalogue</Link>
+                <span>/</span>
+                <span className="text-white">{activeCat.nom}</span>
+              </nav>
+              {activeCat.icone && <span className="text-4xl mb-3 block">{activeCat.icone}</span>}
+              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--violet-light)" }}>
+                Catégorie
+              </p>
+              <h1 className="section-title mb-2">{activeCat.nom}</h1>
+              {activeCat.description && (
+                <p className="text-[#9ca3af] max-w-xl">{activeCat.description}</p>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--violet-light)" }}>
+                Catalogue complet
+              </p>
+              <h1 className="section-title mb-2">Tous nos produits</h1>
+            </>
+          )}
+          <p className="text-[#6b7280] text-sm mt-2">
             {sortedProducts.length} produit{sortedProducts.length > 1 ? "s" : ""}
           </p>
         </div>
 
         {/* Filter bar */}
         <div className="flex items-center gap-3 mb-8">
-          {/* Dropdown Filtres & Tri */}
           <div ref={dropdownRef} className="relative">
             <button
-              onClick={() => setFiltersOpen((v) => !v)}
+              onClick={() => setFiltersOpen(!filtersOpen)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
               style={{
                 background: filtersOpen || activeFilterCount > 0 ? "rgba(107,63,160,0.15)" : "var(--surface)",
@@ -118,14 +180,13 @@ export default function CatalogueClient({ products, categories }: Props) {
                 className="absolute left-0 top-full mt-2 z-40 w-72 rounded-2xl shadow-2xl shadow-black/60 p-5 space-y-5"
                 style={{ background: "var(--card)", border: "1px solid rgba(107,63,160,0.25)" }}
               >
-                {/* Tri */}
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#6b7280] mb-3">Trier par</p>
                   <div className="flex flex-col gap-1.5">
                     {(Object.entries(sortLabels) as [SortOption, string][]).map(([value, label]) => (
                       <button
                         key={value}
-                        onClick={() => { setSort(value); }}
+                        onClick={() => updateParam("sort", value)}
                         className="flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all text-left"
                         style={sort === value ? {
                           background: "rgba(107,63,160,0.2)",
@@ -145,7 +206,6 @@ export default function CatalogueClient({ products, categories }: Props) {
                   </div>
                 </div>
 
-                {/* Prix */}
                 {maxProductPrice > 0 && (
                   <div>
                     <div className="h-px mb-4" style={{ background: "var(--border)" }} />
@@ -158,7 +218,7 @@ export default function CatalogueClient({ products, categories }: Props) {
                       value={sliderValue}
                       onChange={(e) => {
                         const v = Number(e.target.value);
-                        setMaxPrice(v >= maxProductPrice ? 0 : v);
+                        updateParam("max", v >= maxProductPrice ? null : String(v));
                       }}
                       className="w-full accent-[#6b3fa0]"
                     />
@@ -171,12 +231,17 @@ export default function CatalogueClient({ products, categories }: Props) {
                   </div>
                 )}
 
-                {/* Reset */}
                 {activeFilterCount > 0 && (
                   <>
                     <div className="h-px" style={{ background: "var(--border)" }} />
                     <button
-                      onClick={() => { setSort("default"); setMaxPrice(0); }}
+                      onClick={() => {
+                        const params = new URLSearchParams(searchParams.toString());
+                        params.delete("sort");
+                        params.delete("max");
+                        const qs = params.toString();
+                        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+                      }}
                       className="w-full text-xs text-[#6b7280] hover:text-red-400 transition-colors py-1"
                     >
                       Réinitialiser les filtres
@@ -187,17 +252,16 @@ export default function CatalogueClient({ products, categories }: Props) {
             )}
           </div>
 
-          {/* Active sort chip */}
           {sort !== "default" && (
             <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg" style={{ background: "rgba(107,63,160,0.12)", border: "1px solid rgba(107,63,160,0.3)", color: "#c084fc" }}>
               {sortLabels[sort]}
-              <button onClick={() => setSort("default")} className="hover:text-white transition-colors">×</button>
+              <button onClick={() => updateParam("sort", null)} className="hover:text-white transition-colors">×</button>
             </span>
           )}
-          {maxPrice > 0 && maxPrice < maxProductPrice && (
+          {maxPrice > 0 && (
             <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg" style={{ background: "rgba(107,63,160,0.12)", border: "1px solid rgba(107,63,160,0.3)", color: "#c084fc" }}>
               ≤ {maxPrice.toLocaleString("fr-DZ")} DA
-              <button onClick={() => setMaxPrice(0)} className="hover:text-white transition-colors">×</button>
+              <button onClick={() => updateParam("max", null)} className="hover:text-white transition-colors">×</button>
             </span>
           )}
         </div>
@@ -210,23 +274,37 @@ export default function CatalogueClient({ products, categories }: Props) {
               </h3>
               <nav className="space-y-1">
                 <Link
-                  href="/catalogue"
-                  className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-white transition-colors"
-                  style={{ background: "rgba(107,63,160,0.2)", border: "1px solid rgba(107,63,160,0.3)" }}
+                  href={linkWithFilters("/catalogue")}
+                  className="flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors"
+                  style={
+                    !currentCategorySlug
+                      ? { background: "rgba(107,63,160,0.2)", border: "1px solid rgba(107,63,160,0.3)", color: "#fff" }
+                      : { color: "#9ca3af" }
+                  }
                 >
                   Tous les produits
                   <span className="text-xs text-[#9ca3af]">{products.length}</span>
                 </Link>
                 {categories.map((cat) => {
                   const count = products.filter((p) => p.categorie?.slug?.current === cat.slug.current).length;
+                  const isActive = cat.slug.current === currentCategorySlug;
                   return (
                     <Link
                       key={cat._id}
-                      href={`/catalogue/${cat.slug.current}`}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[#9ca3af] hover:text-white hover:bg-[#1f1f1f] transition-colors"
+                      href={linkWithFilters(`/catalogue/${cat.slug.current}`)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive
+                          ? "text-white font-medium"
+                          : "text-[#9ca3af] hover:text-white hover:bg-[#1f1f1f]"
+                      }`}
+                      style={
+                        isActive
+                          ? { background: "rgba(107,63,160,0.2)", border: "1px solid rgba(107,63,160,0.3)" }
+                          : {}
+                      }
                     >
                       {cat.nom}
-                      <span className="text-xs text-[#4b5563]">{count}</span>
+                      <span className={`text-xs ${isActive ? "text-[#9ca3af]" : "text-[#4b5563]"}`}>{count}</span>
                     </Link>
                   );
                 })}
@@ -252,8 +330,22 @@ export default function CatalogueClient({ products, categories }: Props) {
                   Aucun produit trouvé
                 </h3>
                 <p className="text-[#6b7280] text-sm max-w-sm">
-                  {searchQ ? `Aucun résultat pour "${searchQ}"` : "Revenez bientôt."}
+                  {searchQ ? `Aucun résultat pour "${searchQ}"` : "Aucun produit ne correspond aux filtres actifs."}
                 </p>
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={() => {
+                      const params = new URLSearchParams(searchParams.toString());
+                      params.delete("sort");
+                      params.delete("max");
+                      const qs = params.toString();
+                      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+                    }}
+                    className="btn-secondary mt-4 text-sm"
+                  >
+                    Réinitialiser les filtres
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -262,3 +354,4 @@ export default function CatalogueClient({ products, categories }: Props) {
     </div>
   );
 }
+
