@@ -65,11 +65,16 @@ drop policy if exists "avis_anon_write"            on public.avis;
 -- 4. POLICIES — `commandes`
 -- ──────────────────────────────────────────────────────────────────────────
 -- Utilisateur connecté : peut voir SES propres commandes (page /account)
+-- Match user_id OU email pour récupérer aussi les commandes passées en
+-- invité (user_id null) avec la même adresse email que le compte.
 create policy "commandes_own_select"
   on public.commandes
   for select
   to authenticated
-  using ( user_id = auth.uid() );
+  using (
+    user_id = auth.uid()
+    or lower(email) = lower(auth.email())
+  );
 
 -- Anon : aucun accès (pas de SELECT, pas d'INSERT, pas d'UPDATE, pas de DELETE)
 -- L'API /api/commande utilise la SUPABASE_SERVICE_KEY qui bypass la RLS,

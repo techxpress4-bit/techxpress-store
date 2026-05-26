@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
@@ -23,6 +23,8 @@ interface Order {
   items: { product?: { nom?: string }; quantity?: number }[];
 }
 
+type Tab = "compte" | "commandes";
+
 const statutLabels: Record<string, { label: string; color: string; bg: string }> = {
   en_attente:   { label: "En attente",    color: "#fbbf24", bg: "rgba(251,191,36,0.1)" },
   confirmee:    { label: "Confirmée",     color: "#34d399", bg: "rgba(52,211,153,0.1)" },
@@ -32,14 +34,35 @@ const statutLabels: Record<string, { label: string; color: string; bg: string }>
 };
 
 export default function AccountClient() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-28 pb-20 flex items-center justify-center"><p className="text-[#6b7280]">Chargement…</p></div>}>
+      <AccountInner />
+    </Suspense>
+  );
+}
+
+function AccountInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+  const initialTab: Tab = searchParams.get("tab") === "commandes" ? "commandes" : "compte";
+
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [newsletter, setNewsletter] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[] | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+
+  function switchTab(tab: Tab) {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === "compte") params.delete("tab");
+    else params.set("tab", tab);
+    const qs = params.toString();
+    router.replace(qs ? `/account?${qs}` : "/account", { scroll: false });
+  }
 
   useEffect(() => {
     let active = true;
@@ -66,10 +89,11 @@ export default function AccountClient() {
         }
 
         try {
+          // No explicit user_id filter — RLS allows both user_id match and
+          // email match (for guest orders made before login with same email).
           const { data: orderRows } = await supabase
             .from("commandes")
             .select("id, created_at, wilaya, total, statut, items")
-            .eq("user_id", data.user.id)
             .order("created_at", { ascending: false })
             .limit(20);
           if (active) setOrders(orderRows ?? []);
@@ -129,13 +153,14 @@ export default function AccountClient() {
     : user.email?.split("@")[0] ?? "Utilisateur";
 
   const initial = displayName.charAt(0).toUpperCase();
+  const orderCount = orders?.length ?? 0;
 
   return (
     <div className="min-h-screen pt-28 pb-20">
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
 
         {/* Header */}
-        <div className="flex items-center gap-5 mb-10">
+        <div className="flex items-center gap-5 mb-8">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
             style={{ background: "linear-gradient(135deg, var(--violet), var(--violet-dark))", boxShadow: "0 8px 24px var(--violet-glow)" }}>
             {initial}
@@ -148,39 +173,125 @@ export default function AccountClient() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          {/* Profile info */}
-          <div className="card p-6">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#9ca3af] mb-5" style={{ fontFamily: "var(--font-syne)" }}>
-              Informations
-            </h2>
-            <dl className="space-y-4">
-              {[
-                { label: "Prénom", value: profile?.prenom || "—" },
-                { label: "Nom", value: profile?.nom || "—" },
-                { label: "Téléphone", value: profile?.telephone || "—" },
-                { label: "Email", value: user.email || "—" },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between py-2 border-b border-[#1f1f1f] last:border-0">
-                  <dt className="text-xs text-[#6b7280] font-medium w-28">{label}</dt>
-                  <dd className="text-sm text-[#f5f5f5] text-right">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+        {/* Tabs */}
+        <div
+          className="flex items-center gap-1 p-1 rounded-xl mb-6"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+          role="tablist"
+        >
+          <button
+            role="tab"
+            aria-selected={activeTab === "compte"}
+            onClick={() => switchTab("compte")}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
+            style={
+              activeTab === "compte"
+                ? { background: "rgba(107,63,160,0.25)", color: "#fff", border: "1px solid rgba(107,63,160,0.4)" }
+                : { color: "var(--text-secondary)", border: "1px solid transparent" }
+            }
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Mon compte
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === "commandes"}
+            onClick={() => switchTab("commandes")}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
+            style={
+              activeTab === "commandes"
+                ? { background: "rgba(107,63,160,0.25)", color: "#fff", border: "1px solid rgba(107,63,160,0.4)" }
+                : { color: "var(--text-secondary)", border: "1px solid transparent" }
+            }
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            Mes commandes
+            {orderCount > 0 && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "var(--violet)", color: "#fff" }}>
+                {orderCount}
+              </span>
+            )}
+          </button>
+        </div>
 
-          {/* Mes commandes */}
+        {activeTab === "compte" ? (
+          <div className="space-y-4">
+            {/* Profile info */}
+            <div className="card p-6">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#9ca3af] mb-5" style={{ fontFamily: "var(--font-syne)" }}>
+                Informations
+              </h2>
+              <dl className="space-y-4">
+                {[
+                  { label: "Prénom", value: profile?.prenom || "—" },
+                  { label: "Nom", value: profile?.nom || "—" },
+                  { label: "Téléphone", value: profile?.telephone || "—" },
+                  { label: "Email", value: user.email || "—" },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-center justify-between py-2 border-b border-[#1f1f1f] last:border-0">
+                    <dt className="text-xs text-[#6b7280] font-medium w-28">{label}</dt>
+                    <dd className="text-sm text-[#f5f5f5] text-right">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            {/* Newsletter */}
+            <div className="card p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-bold text-white mb-1" style={{ fontFamily: "var(--font-syne)" }}>
+                    Offres &amp; Promotions
+                  </h2>
+                  <p className="text-xs text-[#6b7280] leading-relaxed max-w-xs">
+                    Recevoir les offres exclusives et nouveautés TechXpress par email.
+                  </p>
+                </div>
+                <button
+                  onClick={handleNewsletterToggle}
+                  disabled={saving}
+                  aria-label="Toggle newsletter"
+                  className={`relative w-12 h-6 rounded-full transition-all duration-300 flex-shrink-0 ${newsletter ? "" : "bg-[#2a2a2a]"}`}
+                  style={newsletter ? { background: "var(--violet)", boxShadow: "0 0 12px var(--violet-glow)" } : {}}
+                >
+                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300 ${newsletter ? "left-6" : "left-0.5"}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all"
+              style={{ border: "1px solid rgba(239,68,68,0.2)" }}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Se déconnecter
+            </button>
+          </div>
+        ) : (
           <div className="card p-6">
             <h2 className="text-sm font-bold uppercase tracking-wider text-[#9ca3af] mb-5" style={{ fontFamily: "var(--font-syne)" }}>
-              Mes commandes
+              Historique des commandes
             </h2>
 
             {orders === null ? (
               <p className="text-sm text-[#6b7280]">Chargement…</p>
             ) : orders.length === 0 ? (
-              <div className="text-center py-6">
+              <div className="text-center py-10">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <svg className="w-7 h-7 text-[#4b5563]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
                 <p className="text-sm text-[#6b7280] mb-3">Aucune commande pour le moment</p>
-                <Link href="/catalogue" className="text-xs font-semibold" style={{ color: "var(--violet-light)" }}>
+                <Link href="/catalogue" className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: "var(--violet-light)" }}>
                   Explorer le catalogue →
                 </Link>
               </div>
@@ -233,71 +344,8 @@ export default function AccountClient() {
               </div>
             )}
           </div>
+        )}
 
-          {/* Newsletter */}
-          <div className="card p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-sm font-bold text-white mb-1" style={{ fontFamily: "var(--font-syne)" }}>
-                  Offres &amp; Promotions
-                </h2>
-                <p className="text-xs text-[#6b7280] leading-relaxed max-w-xs">
-                  Recevoir les offres exclusives et nouveautés TechXpress par email.
-                </p>
-              </div>
-              <button
-                onClick={handleNewsletterToggle}
-                disabled={saving}
-                aria-label="Toggle newsletter"
-                className={`relative w-12 h-6 rounded-full transition-all duration-300 flex-shrink-0 ${newsletter ? "" : "bg-[#2a2a2a]"}`}
-                style={newsletter ? { background: "var(--violet)", boxShadow: "0 0 12px var(--violet-glow)" } : {}}
-              >
-                <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300 ${newsletter ? "left-6" : "left-0.5"}`} />
-              </button>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="card p-6 space-y-3">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#9ca3af] mb-4" style={{ fontFamily: "var(--font-syne)" }}>
-              Mon espace
-            </h2>
-            <Link href="/panier" className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-[#1f1f1f] transition-colors group">
-              <div className="flex items-center gap-3 text-sm text-[#9ca3af] group-hover:text-white">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-                Mon panier
-              </div>
-              <svg className="w-4 h-4 text-[#4b5563] group-hover:text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-            <Link href="/catalogue" className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-[#1f1f1f] transition-colors group">
-              <div className="flex items-center gap-3 text-sm text-[#9ca3af] group-hover:text-white">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                Catalogue
-              </div>
-              <svg className="w-4 h-4 text-[#4b5563] group-hover:text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all"
-            style={{ border: "1px solid rgba(239,68,68,0.2)" }}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Se déconnecter
-          </button>
-        </div>
       </div>
     </div>
   );
