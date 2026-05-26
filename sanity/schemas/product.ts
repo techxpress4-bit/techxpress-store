@@ -300,13 +300,16 @@ export const productSchema = defineType({
       varMedia: "variantes.0.photo",
       prix: "prix",
       enStock: "enStock",
-      descBlock: "description.0",
+      photoKey: "photos.0._key",
+      photoAsset: "photos.0.asset._ref",
+      varPhotoAsset: "variantes.0.photo.asset._ref",
+      descKey: "description.0._key",
       marque: "marque",
       garantie: "garantie",
     },
-    prepare({ title, media, varMedia, prix, enStock, descBlock, marque, garantie }) {
-      const hasPhoto = !!media || !!varMedia;
-      const hasDesc = !!descBlock;
+    prepare({ title, media, varMedia, prix, enStock, photoKey, photoAsset, varPhotoAsset, descKey, marque, garantie }) {
+      const hasPhoto = !!photoKey || !!photoAsset || !!varPhotoAsset;
+      const hasDesc = !!descKey;
       const missing: string[] = [];
       if (!hasPhoto) missing.push("photo");
       if (!hasDesc) missing.push("description");
