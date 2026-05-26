@@ -28,14 +28,17 @@ function corsHeaders(origin) {
   };
 }
 
-async function sendEmail(apiKey, { from, to, subject, html }) {
+async function sendEmail(apiKey, { from, to, subject, html, text, replyTo }) {
+  const body = { from, to: [to], subject, html };
+  if (text) body.text = text;
+  if (replyTo) body.reply_to = replyTo;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from, to: [to], subject, html }),
+    body: JSON.stringify(body),
   });
   return res;
 }
@@ -232,105 +235,213 @@ export async function onRequestPost(context) {
       <p style="color:#666;font-size:12px;">Paiement à la livraison — aucune somme à encaisser en ligne.</p>
     `;
 
-    // Customer confirmation email
+    // Customer confirmation email — light theme, Outlook-compatible table layout
     customerEmail = email;
-    customerSubject = `Votre commande TechXpress a bien été reçue`;
-    customerHtml = `
-      <!DOCTYPE html>
-      <html lang="fr">
-      <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-      <body style="margin:0;padding:0;background:#0a0a0a;font-family:Arial,sans-serif;">
-        <div style="max-width:600px;margin:0 auto;padding:32px 16px;">
-          <div style="background:#161616;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;">
-            <!-- Header -->
-            <div style="background:linear-gradient(135deg,#6b3fa0,#4a1d7a);padding:32px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:22px;letter-spacing:-0.5px;">TechXpress DZ</h1>
-              <p style="margin:8px 0 0;color:rgba(255,255,255,0.75);font-size:13px;">Votre destination tech en Algérie</p>
-            </div>
-            <!-- Body -->
-            <div style="padding:32px;">
-              <div style="background:rgba(107,63,160,0.12);border:1px solid rgba(107,63,160,0.25);border-radius:12px;padding:16px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
-                <span style="font-size:24px;">✅</span>
-                <div>
-                  <p style="margin:0;color:#ffffff;font-weight:bold;font-size:15px;">Commande reçue !</p>
-                  <p style="margin:4px 0 0;color:#9ca3af;font-size:13px;">Notre équipe vous contactera sous <strong style="color:#f5f5f5;">24h</strong> pour confirmer la livraison.</p>
-                </div>
-              </div>
+    customerSubject = `Confirmation de votre commande TechXpress DZ`;
 
-              <p style="color:#f5f5f5;margin:0 0 4px;font-size:15px;">Bonjour <strong>${escapeHtml(prenom)}</strong>,</p>
-              <p style="color:#9ca3af;margin:0 0 24px;font-size:14px;line-height:1.6;">Merci pour votre commande. Voici le récapitulatif :</p>
+    const productRows = items
+      .map((item) => {
+        const p = item?.product || {};
+        const qty = Math.max(1, Math.min(99, Number(item?.quantity) || 1));
+        const isAbonnement = item?.optionAbonnement === "box-abonnement";
+        const today = new Date().toISOString().split("T")[0];
+        const promoActive =
+          Number(p.prixPromo) > 0 &&
+          Number(p.prixPromo) < Number(p.prix) &&
+          (!p.dateDebutPromo || p.dateDebutPromo <= today) &&
+          (!p.dateFinPromo || p.dateFinPromo >= today);
+        const prixBase = promoActive ? Number(p.prixPromo) : Number(p.prix) || 0;
+        const unit =
+          isAbonnement && Number(p.prixAvecAbonnement) > 0
+            ? Number(p.prixAvecAbonnement)
+            : prixBase;
+        const lineTotal = unit * qty;
+        return `
+          <tr>
+            <td style="padding:14px 0;border-bottom:1px solid #ececec;font-family:Helvetica,Arial,sans-serif;">
+              <p style="margin:0;color:#1a1a1a;font-size:14px;font-weight:600;line-height:1.4;">${escapeHtml(p.nom || "Produit")}</p>
+              <p style="margin:4px 0 0;color:#6b7280;font-size:12px;">
+                Quantité&nbsp;: ${qty}${isAbonnement ? " &middot; Avec abonnement TV" : ""}
+              </p>
+            </td>
+            <td style="padding:14px 0;border-bottom:1px solid #ececec;text-align:right;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:14px;font-weight:600;white-space:nowrap;vertical-align:top;">
+              ${lineTotal.toLocaleString("fr-DZ")} DA
+            </td>
+          </tr>
+        `;
+      })
+      .join("");
 
-              <!-- Customer info -->
-              <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-                <tr>
-                  <td style="padding:8px 0;color:#6b7280;font-size:13px;width:120px;">Nom complet</td>
-                  <td style="padding:8px 0;color:#f5f5f5;font-size:13px;">${escapeHtml(prenom)} ${escapeHtml(nom)}</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Téléphone</td>
-                  <td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(phoneClean)}</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Adresse</td>
-                  <td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(adresse)}</td>
-                </tr>
-                ${codePostal ? `<tr><td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Code postal</td><td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(codePostal)}</td></tr>` : ""}
-                <tr>
-                  <td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Daïra</td>
-                  <td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(daira)}</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Wilaya</td>
-                  <td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(wilaya)}</td>
-                </tr>
-                ${message ? `<tr><td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Note</td><td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(message)}</td></tr>` : ""}
-              </table>
+    const infoRow = (label, value) =>
+      value
+        ? `
+          <tr>
+            <td style="padding:6px 0;font-family:Helvetica,Arial,sans-serif;color:#6b7280;font-size:13px;vertical-align:top;width:130px;">${escapeHtml(label)}</td>
+            <td style="padding:6px 0;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:13px;line-height:1.5;">${escapeHtml(value)}</td>
+          </tr>
+        `
+        : "";
 
-              <!-- Products -->
-              <h3 style="color:#ffffff;font-size:14px;font-weight:bold;margin:0 0 12px;text-transform:uppercase;letter-spacing:0.05em;">Produits commandés</h3>
-              <div style="background:#111111;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;margin-bottom:24px;">
-                ${items.map((item) => {
-                  const p = item?.product || {};
-                  const qty = Math.max(1, Math.min(99, Number(item?.quantity) || 1));
-                  const isAbonnement = item?.optionAbonnement === "box-abonnement";
-                  const today = new Date().toISOString().split("T")[0];
-                  const promoActive = Number(p.prixPromo) > 0 && Number(p.prixPromo) < Number(p.prix) &&
-                    (!p.dateDebutPromo || p.dateDebutPromo <= today) &&
-                    (!p.dateFinPromo || p.dateFinPromo >= today);
-                  const prixBase = promoActive ? Number(p.prixPromo) : Number(p.prix) || 0;
-                  const unit = isAbonnement && Number(p.prixAvecAbonnement) > 0 ? Number(p.prixAvecAbonnement) : prixBase;
-                  return `<div style="padding:12px 16px;border-bottom:1px solid #2a2a2a;display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                      <p style="margin:0;color:#f5f5f5;font-size:13px;font-weight:600;">${escapeHtml(p.nom || "—")}</p>
-                      ${isAbonnement ? `<p style="margin:2px 0 0;color:#9ca3af;font-size:11px;">Avec abonnement TV</p>` : ""}
-                      <p style="margin:2px 0 0;color:#6b7280;font-size:11px;">Qté : ${qty}</p>
-                    </div>
-                    <p style="margin:0;color:#c084fc;font-weight:bold;font-size:14px;white-space:nowrap;">${(unit * qty).toLocaleString("fr-DZ")} DA</p>
-                  </div>`;
-                }).join("")}
-                <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;background:rgba(107,63,160,0.08);">
-                  <span style="color:#ffffff;font-weight:bold;font-size:14px;">Total</span>
-                  <span style="color:#c084fc;font-weight:bold;font-size:18px;">${totalCalc.toLocaleString("fr-DZ")} DA</span>
-                </div>
-              </div>
+    customerHtml = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<title>${escapeHtml(customerSubject)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f5f7;font-family:Helvetica,Arial,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+  Merci pour votre commande&nbsp;! Récapitulatif inclus. Notre équipe vous contactera sous 24h.
+</div>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f5f7;padding:24px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;">
+        <!-- Header -->
+        <tr>
+          <td style="padding:28px 32px 16px;border-bottom:1px solid #ececec;">
+            <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:18px;font-weight:700;letter-spacing:-0.3px;color:#1a1a1a;">
+              <span style="color:#1a1a1a;">Tech</span><span style="color:#6b3fa0;">Xpress</span> <span style="color:#6b7280;font-weight:400;font-size:14px;">DZ</span>
+            </p>
+          </td>
+        </tr>
 
-              <!-- Payment notice -->
-              <div style="background:#111111;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:24px;display:flex;align-items:center;gap:10px;">
-                <span style="font-size:20px;">💵</span>
-                <p style="margin:0;color:#9ca3af;font-size:13px;">Paiement à la livraison — aucun paiement en ligne requis. Vous payez à la réception de votre colis.</p>
-              </div>
+        <!-- Hero -->
+        <tr>
+          <td style="padding:32px 32px 8px;">
+            <p style="margin:0 0 6px;font-family:Helvetica,Arial,sans-serif;color:#6b3fa0;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+              Commande confirmée
+            </p>
+            <h1 style="margin:0 0 12px;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:24px;line-height:1.3;font-weight:700;letter-spacing:-0.5px;">
+              Merci ${escapeHtml(prenom)}, on a bien reçu votre commande.
+            </h1>
+            <p style="margin:0;font-family:Helvetica,Arial,sans-serif;color:#4b5563;font-size:14px;line-height:1.6;">
+              Notre équipe vous contactera sous <strong style="color:#1a1a1a;">24&nbsp;heures</strong> pour confirmer la livraison.
+            </p>
+          </td>
+        </tr>
 
-              <p style="color:#6b7280;font-size:12px;text-align:center;margin:0;">Des questions ? Contactez-nous sur WhatsApp ou via notre site.</p>
-            </div>
-            <!-- Footer -->
-            <div style="padding:16px 32px;text-align:center;border-top:1px solid #1f1f1f;">
-              <p style="margin:0;color:#4b5563;font-size:11px;">© 2025 TechXpress DZ — techxpressdz.com</p>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+        <!-- Order summary -->
+        <tr>
+          <td style="padding:24px 32px 8px;">
+            <p style="margin:0 0 12px;font-family:Helvetica,Arial,sans-serif;color:#6b7280;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+              Récapitulatif
+            </p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              ${productRows}
+              <tr>
+                <td style="padding:18px 0 0;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:15px;font-weight:600;">
+                  Total
+                </td>
+                <td style="padding:18px 0 0;text-align:right;font-family:Helvetica,Arial,sans-serif;color:#6b3fa0;font-size:20px;font-weight:700;white-space:nowrap;">
+                  ${totalCalc.toLocaleString("fr-DZ")} DA
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Delivery info -->
+        <tr>
+          <td style="padding:32px 32px 8px;">
+            <p style="margin:0 0 12px;font-family:Helvetica,Arial,sans-serif;color:#6b7280;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+              Livraison
+            </p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              ${infoRow("Nom complet", `${prenom} ${nom}`)}
+              ${infoRow("Téléphone", phoneClean)}
+              ${infoRow("Adresse", adresse)}
+              ${codePostal ? infoRow("Code postal", codePostal) : ""}
+              ${infoRow("Daïra", daira)}
+              ${infoRow("Wilaya", wilaya)}
+              ${message ? infoRow("Note", message) : ""}
+            </table>
+          </td>
+        </tr>
+
+        <!-- Payment notice -->
+        <tr>
+          <td style="padding:24px 32px 8px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f9f6ff;border:1px solid #e5d6ff;border-radius:10px;">
+              <tr>
+                <td style="padding:16px 18px;font-family:Helvetica,Arial,sans-serif;color:#3b2462;font-size:13px;line-height:1.6;">
+                  <strong style="color:#1a1a1a;">Paiement à la livraison.</strong> Aucun paiement en ligne&nbsp;: vous réglez en espèces à la réception du colis.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Help -->
+        <tr>
+          <td style="padding:24px 32px 32px;">
+            <p style="margin:0;font-family:Helvetica,Arial,sans-serif;color:#6b7280;font-size:13px;line-height:1.6;text-align:center;">
+              Une question&nbsp;? Répondez simplement à cet email ou contactez-nous sur WhatsApp.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 32px;background-color:#fafafa;border-top:1px solid #ececec;text-align:center;">
+            <p style="margin:0;font-family:Helvetica,Arial,sans-serif;color:#9ca3af;font-size:11px;line-height:1.5;">
+              TechXpress DZ &middot; <a href="https://techxpressdz.com" style="color:#6b3fa0;text-decoration:none;">techxpressdz.com</a><br>
+              Livraison dans les 58 wilayas d'Algérie.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+
+    // Plain-text fallback (boosts spam score, required by many filters)
+    const productLinesTxt = items
+      .map((item) => {
+        const p = item?.product || {};
+        const qty = Math.max(1, Math.min(99, Number(item?.quantity) || 1));
+        const isAbonnement = item?.optionAbonnement === "box-abonnement";
+        const today = new Date().toISOString().split("T")[0];
+        const promoActive =
+          Number(p.prixPromo) > 0 &&
+          Number(p.prixPromo) < Number(p.prix) &&
+          (!p.dateDebutPromo || p.dateDebutPromo <= today) &&
+          (!p.dateFinPromo || p.dateFinPromo >= today);
+        const prixBase = promoActive ? Number(p.prixPromo) : Number(p.prix) || 0;
+        const unit =
+          isAbonnement && Number(p.prixAvecAbonnement) > 0
+            ? Number(p.prixAvecAbonnement)
+            : prixBase;
+        return `- ${p.nom || "Produit"} (x${qty}${isAbonnement ? ", avec abonnement TV" : ""}) — ${(unit * qty).toLocaleString("fr-DZ")} DA`;
+      })
+      .join("\n");
+
+    const customerText = `TechXpress DZ — Confirmation de commande
+
+Merci ${prenom}, votre commande a bien été reçue. Notre équipe vous contactera sous 24 heures pour confirmer la livraison.
+
+RÉCAPITULATIF
+${productLinesTxt}
+
+Total : ${totalCalc.toLocaleString("fr-DZ")} DA
+
+LIVRAISON
+Nom : ${prenom} ${nom}
+Téléphone : ${phoneClean}
+Adresse : ${adresse}${codePostal ? `\nCode postal : ${codePostal}` : ""}
+Daïra : ${daira}
+Wilaya : ${wilaya}${message ? `\nNote : ${message}` : ""}
+
+Paiement à la livraison — aucun paiement en ligne.
+
+Une question ? Répondez à cet email ou contactez-nous sur WhatsApp.
+
+—
+TechXpress DZ
+https://techxpressdz.com`;
 
     // Send admin email
     const adminRes = await sendEmail(apiKey, { from: fromEmail, to: toEmail, subject: adminSubject, html: adminHtml });
@@ -351,6 +462,8 @@ export async function onRequestPost(context) {
       to: customerEmail,
       subject: customerSubject,
       html: customerHtml,
+      text: customerText,
+      replyTo: toEmail,
     })
       .then(async (r) => {
         if (!r.ok) {
