@@ -117,9 +117,9 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* ── Zone info (fond légèrement plus foncé) ── */}
-      <div className="p-3 sm:p-4" style={{ background: "#efefef" }}>
+      <div className="p-3 sm:p-4 flex-1 flex flex-col" style={{ background: "#efefef" }}>
         <h3
-          className="text-xs sm:text-sm font-semibold text-neutral-900 leading-snug line-clamp-2"
+          className="text-xs sm:text-sm font-semibold text-neutral-900 leading-snug line-clamp-2 min-h-[2.4em] sm:min-h-[2.6em]"
           style={{ fontFamily: "var(--font-syne)" }}
         >
           {product.nom}
@@ -129,37 +129,37 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.categorie.nom}
           </p>
         )}
-        {product.variantes && product.variantes.length > 0 && (
-          <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-            {product.variantes.slice(0, 6).map((v) =>
-              v.couleur ? (
-                <span
-                  key={v._key}
-                  title={v.nom}
-                  className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{ background: v.couleur, boxShadow: "0 0 0 1px rgba(0,0,0,0.15)" }}
-                />
-              ) : (
-                <span
-                  key={v._key}
-                  title={v.nom}
-                  className="text-[9px] font-medium text-neutral-600 px-1.5 py-0.5 rounded border border-neutral-300 bg-white flex-shrink-0 leading-none"
-                >
-                  {v.nom.length > 8 ? `${v.nom.slice(0, 7)}…` : v.nom}
-                </span>
-              )
-            )}
-            {product.variantes.length > 6 && (
-              <span className="text-[9px] text-neutral-400">+{product.variantes.length - 6}</span>
-            )}
-          </div>
-        )}
-        <div className="mt-2 sm:mt-3">
-          {promo && (
-            <p className="text-[10px] sm:text-xs text-neutral-400 line-through leading-none mb-0.5">
-              {product.prix.toLocaleString("fr-DZ")} DA
-            </p>
+        <div className="min-h-[1.5rem] flex items-center mt-1.5">
+          {product.variantes && product.variantes.length > 0 && (
+            <div className="flex items-center gap-1 flex-wrap">
+              {product.variantes.slice(0, 6).map((v) =>
+                v.couleur ? (
+                  <span
+                    key={v._key}
+                    title={v.nom}
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ background: v.couleur, boxShadow: "0 0 0 1px rgba(0,0,0,0.15)" }}
+                  />
+                ) : (
+                  <span
+                    key={v._key}
+                    title={v.nom}
+                    className="text-[9px] font-medium text-neutral-600 px-1.5 py-0.5 rounded border border-neutral-300 bg-white flex-shrink-0 leading-none"
+                  >
+                    {v.nom.length > 8 ? `${v.nom.slice(0, 7)}…` : v.nom}
+                  </span>
+                )
+              )}
+              {product.variantes.length > 6 && (
+                <span className="text-[9px] text-neutral-400">+{product.variantes.length - 6}</span>
+              )}
+            </div>
           )}
+        </div>
+        <div className="mt-auto pt-2 sm:pt-3">
+          <p className={`text-[10px] sm:text-xs leading-none mb-0.5 ${promo ? "text-neutral-400 line-through" : "text-transparent select-none"}`}>
+            {product.prix.toLocaleString("fr-DZ")} DA
+          </p>
           <p
             className={`text-base sm:text-lg font-bold leading-none ${promo ? "text-rose-600" : "text-neutral-900"}`}
             style={{ fontFamily: "var(--font-syne)" }}

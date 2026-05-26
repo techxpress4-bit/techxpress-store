@@ -104,11 +104,11 @@ export default function AddToCartSection({ product, onVariantChange }: Props) {
         </p>
       </div>
 
-      {/* Sélecteur de déclinaisons */}
+      {/* Sélecteur de couleurs */}
       {hasVariants && product.variantes && (
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-[#9ca3af] mb-3" style={{ fontFamily: "var(--font-syne)" }}>
-            Déclinaison
+            Couleur
           </p>
           <div className="flex flex-wrap gap-2.5 mb-2">
             {product.variantes.map((v) => {
