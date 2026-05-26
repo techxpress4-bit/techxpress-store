@@ -445,32 +445,55 @@ export default function CommanderClient() {
                   const promoActive = !!item.product.prixPromo && item.product.prixPromo < item.product.prix &&
                     (!item.product.dateDebutPromo || item.product.dateDebutPromo <= today) &&
                     (!item.product.dateFinPromo || item.product.dateFinPromo >= today);
-                  const unitPrice = item.variantPrix !== undefined
+                  const isBoxAbo =
+                    item.optionAbonnement === "box-abonnement" &&
+                    !!item.product.prixAvecAbonnement;
+                  // Base = the box-only price for this line (variant or promo aware)
+                  const basePrice = item.variantPrix !== undefined
                     ? item.variantPrix
-                    : item.optionAbonnement === "box-abonnement" && item.product.prixAvecAbonnement
-                      ? item.product.prixAvecAbonnement
-                      : promoActive ? item.product.prixPromo! : item.product.prix;
+                    : promoActive ? item.product.prixPromo! : item.product.prix;
+                  const abonnementPrice = isBoxAbo
+                    ? Math.max(0, item.product.prixAvecAbonnement! - basePrice)
+                    : 0;
+                  const key = `${item.product._id}-${item.variantKey ?? "none"}-${item.optionAbonnement}`;
                   return (
-                    <div key={`${item.product._id}-${item.variantKey ?? "none"}-${item.optionAbonnement}`} className="flex justify-between gap-3 text-sm">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[#f5f5f5] line-clamp-2 text-xs font-medium" style={{ fontFamily: "var(--font-syne)" }}>
-                          {item.product.nom}
-                        </p>
-                        {item.variantNom && (
-                          <p className="text-xs mt-0.5 font-semibold" style={{ color: "var(--violet-light)" }}>
-                            {item.variantNom}
+                    <div key={key} className="space-y-1.5">
+                      {/* Box line */}
+                      <div className="flex justify-between gap-3 text-sm">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[#f5f5f5] line-clamp-2 text-xs font-medium" style={{ fontFamily: "var(--font-syne)" }}>
+                            {item.product.nom}
                           </p>
-                        )}
-                        {item.optionAbonnement && (
+                          {item.variantNom && (
+                            <p className="text-xs mt-0.5 font-semibold" style={{ color: "var(--violet-light)" }}>
+                              {item.variantNom}
+                            </p>
+                          )}
                           <p className="text-[#6b7280] text-xs mt-0.5">
-                            {abonnementLabels[item.optionAbonnement]}
+                            {isBoxAbo ? "Box seule" : "Qté : " + item.quantity}
+                            {isBoxAbo && ` · Qté : ${item.quantity}`}
                           </p>
-                        )}
-                        <p className="text-[#6b7280] text-xs">Qté : {item.quantity}</p>
+                        </div>
+                        <span className="text-white text-sm flex-shrink-0 font-semibold">
+                          {(basePrice * item.quantity).toLocaleString("fr-DZ")} DA
+                        </span>
                       </div>
-                      <span className="text-white text-sm flex-shrink-0 font-semibold">
-                        {(unitPrice * item.quantity).toLocaleString("fr-DZ")} DA
-                      </span>
+                      {/* Abonnement line (only when box+abonnement) */}
+                      {isBoxAbo && abonnementPrice > 0 && (
+                        <div className="flex justify-between gap-3 text-sm pl-3 border-l-2" style={{ borderColor: "rgba(107,63,160,0.3)" }}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium" style={{ color: "var(--violet-light)" }}>
+                              + Abonnement TV
+                            </p>
+                            <p className="text-[#6b7280] text-[11px] mt-0.5">
+                              Qté : {item.quantity}
+                            </p>
+                          </div>
+                          <span className="text-sm flex-shrink-0 font-semibold" style={{ color: "var(--violet-light)" }}>
+                            {(abonnementPrice * item.quantity).toLocaleString("fr-DZ")} DA
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
