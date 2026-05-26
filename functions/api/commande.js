@@ -147,8 +147,8 @@ export async function onRequestPost(context) {
         headers: baseHeaders,
       });
     }
-    const phoneClean = telephone.replace(/\s|-|\./g, "");
-    if (!/^(?:0[567]\d{8}|\+213[567]\d{8})$/.test(phoneClean)) {
+    const phoneClean = telephone.replace(/[\s\-.()]/g, "");
+    if (!/^(?:0[567]\d{8}|\+[1-9]\d{7,14})$/.test(phoneClean)) {
       return new Response(JSON.stringify({ error: "Téléphone invalide" }), {
         status: 400,
         headers: baseHeaders,

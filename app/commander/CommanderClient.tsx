@@ -65,9 +65,9 @@ export default function CommanderClient() {
       return;
     }
 
-    const phoneClean = form.telephone.replace(/\s|-|\./g, "");
-    if (!/^(?:0[567]\d{8}|\+213[567]\d{8})$/.test(phoneClean)) {
-      toast.error("Numéro de téléphone invalide (ex : 05XXXXXXXX)");
+    const phoneClean = form.telephone.replace(/[\s\-.()]/g, "");
+    if (!/^(?:0[567]\d{8}|\+[1-9]\d{7,14})$/.test(phoneClean)) {
+      toast.error("Numéro invalide (ex : 05XXXXXXXX ou +33XXXXXXXXX)");
       return;
     }
 
@@ -258,7 +258,7 @@ export default function CommanderClient() {
                     value={form.telephone}
                     onChange={handleChange}
                     required
-                    placeholder="05 XX XX XX XX"
+                    placeholder="05 XX XX XX XX ou +33 ..."
                     className="input-field"
                   />
                 </div>
