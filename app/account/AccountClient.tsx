@@ -28,9 +28,16 @@ interface Order {
   wilaya: string;
   total: number | null;
   total_price?: number | null;
+  shipping_fee?: number | null;
+  shipping_option?: string | null;
   statut: string;
   items: OrderItem[];
 }
+
+const SHIPPING_OPTION_DISPLAY: Record<string, string> = {
+  domicile: "Domicile",
+  stop_desk: "Point relais",
+};
 
 type Tab = "compte" | "commandes";
 
@@ -102,7 +109,7 @@ function AccountInner() {
           // email match (for guest orders made before login with same email).
           const { data: orderRows } = await supabase
             .from("commandes")
-            .select("id, created_at, wilaya, total, total_price, statut, items")
+            .select("id, created_at, wilaya, total, total_price, shipping_fee, shipping_option, statut, items")
             .order("created_at", { ascending: false })
             .limit(20);
           if (active) setOrders(orderRows ?? []);
@@ -384,11 +391,36 @@ function AccountInner() {
                       )}
 
                       {/* Footer */}
-                      <div className="p-4 flex items-center justify-between">
-                        <span className="text-xs text-[#6b7280] font-medium">Total</span>
-                        <p className="text-base font-bold" style={{ color: "var(--violet-light)" }}>
-                          {totalValue.toLocaleString("fr-DZ")} DA
-                        </p>
+                      <div className="p-4 space-y-1.5">
+                        {order.shipping_fee != null && Number(order.shipping_fee) > 0 && (
+                          <>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-[#6b7280]">Sous-total</span>
+                              <span className="text-[#9ca3af]">
+                                {Math.max(0, totalValue - Number(order.shipping_fee)).toLocaleString("fr-DZ")} DA
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-[#6b7280]">
+                                Livraison
+                                {order.shipping_option && (
+                                  <span className="ml-1 text-[#4b5563]">
+                                    ({SHIPPING_OPTION_DISPLAY[order.shipping_option] ?? order.shipping_option})
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-[#9ca3af]">
+                                {Number(order.shipping_fee).toLocaleString("fr-DZ")} DA
+                              </span>
+                            </div>
+                          </>
+                        )}
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-xs text-[#6b7280] font-medium">Total</span>
+                          <p className="text-base font-bold" style={{ color: "var(--violet-light)" }}>
+                            {totalValue.toLocaleString("fr-DZ")} DA
+                          </p>
+                        </div>
                       </div>
                     </div>
                   );

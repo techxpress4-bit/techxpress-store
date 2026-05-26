@@ -4,6 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { wilayas } from "@/lib/wilayas";
+import {
+  getShippingFee,
+  stopDeskAvailable,
+  hasShipping,
+  SHIPPING_OPTION_LABELS,
+  type ShippingOption,
+} from "@/lib/shipping";
 import type { AbonnementOption } from "@/lib/types";
 import toast from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +38,18 @@ export default function CommanderClient() {
     email: "",
     message: "",
   });
+  const [shippingOption, setShippingOption] = useState<ShippingOption>("domicile");
+
+  // If user switches to a wilaya without Stop Desk, force back to domicile.
+  useEffect(() => {
+    if (form.wilaya && shippingOption === "stop_desk" && !stopDeskAvailable(form.wilaya)) {
+      setShippingOption("domicile");
+    }
+  }, [form.wilaya, shippingOption]);
+
+  const shippingFee = form.wilaya ? getShippingFee(form.wilaya, shippingOption) : null;
+  const wilayaHasShipping = form.wilaya ? hasShipping(form.wilaya) : true;
+  const totalWithShipping = totalPrice + (shippingFee ?? 0);
 
   useEffect(() => {
     const supabase = createClient();
@@ -71,6 +90,13 @@ export default function CommanderClient() {
       return;
     }
 
+    if (!wilayaHasShipping || shippingFee === null) {
+      toast.error(
+        "Cette wilaya n'a pas de tarif de livraison configuré. Contactez-nous sur WhatsApp."
+      );
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/commande", {
@@ -83,6 +109,8 @@ export default function CommanderClient() {
           userId: userId ?? undefined,
           items,
           totalPrice,
+          shippingOption,
+          shippingFee,
         }),
       });
 
@@ -91,7 +119,8 @@ export default function CommanderClient() {
       if (typeof window !== "undefined" && (window as { gtag?: (...args: unknown[]) => void }).gtag) {
         (window as { gtag?: (...args: unknown[]) => void }).gtag!("event", "purchase", {
           currency: "DZD",
-          value: totalPrice,
+          value: totalWithShipping,
+          shipping: shippingFee ?? 0,
           transaction_id: `TX-${Date.now()}`,
         });
       }
@@ -280,6 +309,80 @@ export default function CommanderClient() {
                 </div>
               </div>
 
+              {/* Mode de livraison */}
+              {form.wilaya && (
+                <div className="mt-5">
+                  <label className="block text-xs font-medium text-[#9ca3af] mb-2">Mode de livraison *</label>
+                  {!wilayaHasShipping ? (
+                    <div
+                      className="p-3 rounded-xl text-sm"
+                      style={{
+                        background: "rgba(248,113,113,0.08)",
+                        border: "1px solid rgba(248,113,113,0.3)",
+                        color: "#fca5a5",
+                      }}
+                    >
+                      Aucun tarif de livraison configuré pour cette wilaya. Contactez-nous sur WhatsApp pour un devis.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(["domicile", "stop_desk"] as ShippingOption[]).map((opt) => {
+                        const fee = getShippingFee(form.wilaya, opt);
+                        const available = fee !== null;
+                        const isSelected = shippingOption === opt;
+                        return (
+                          <button
+                            type="button"
+                            key={opt}
+                            disabled={!available}
+                            onClick={() => available && setShippingOption(opt)}
+                            className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={
+                              isSelected
+                                ? {
+                                    background: "rgba(107,63,160,0.15)",
+                                    border: "1px solid rgba(107,63,160,0.5)",
+                                    color: "#fff",
+                                  }
+                                : {
+                                    background: "var(--surface)",
+                                    border: "1px solid var(--border)",
+                                    color: "#9ca3af",
+                                  }
+                            }
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span
+                                className={`relative w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center`}
+                                style={{
+                                  border: `2px solid ${isSelected ? "#c084fc" : "#3a3a3a"}`,
+                                  background: isSelected ? "#c084fc" : "transparent",
+                                }}
+                              >
+                                {isSelected && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                                )}
+                              </span>
+                              <div>
+                                <p className="text-xs font-semibold leading-tight">
+                                  {SHIPPING_OPTION_LABELS[opt]}
+                                </p>
+                                {!available && (
+                                  <p className="text-[10px] text-[#6b7280] mt-0.5">Indisponible</p>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-sm font-bold flex-shrink-0" style={{ color: available ? (isSelected ? "var(--violet-light)" : "#f5f5f5") : "#6b7280" }}>
+                              {available ? `${fee.toLocaleString("fr-DZ")} DA` : "—"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="mt-4">
                 <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">
                   Message (optionnel)
@@ -375,15 +478,35 @@ export default function CommanderClient() {
 
               <div className="divider mb-4" />
 
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-[#9ca3af]">Livraison</span>
-                <span className="text-sm text-green-400 font-medium">À confirmer</span>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-[#9ca3af]">Sous-total</span>
+                <span className="text-sm text-[#f5f5f5] font-semibold">
+                  {totalPrice.toLocaleString("fr-DZ")} DA
+                </span>
               </div>
 
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-sm text-[#9ca3af]">
+                  Livraison
+                  {form.wilaya && wilayaHasShipping && shippingFee !== null && (
+                    <span className="block text-[10px] text-[#6b7280] mt-0.5">
+                      {SHIPPING_OPTION_LABELS[shippingOption]}
+                    </span>
+                  )}
+                </span>
+                <span className="text-sm font-semibold" style={{ color: form.wilaya && shippingFee !== null ? "#f5f5f5" : "#6b7280" }}>
+                  {form.wilaya && shippingFee !== null
+                    ? `${shippingFee.toLocaleString("fr-DZ")} DA`
+                    : "Choisir une wilaya"}
+                </span>
+              </div>
+
+              <div className="divider mb-4" />
+
               <div className="flex justify-between items-center mb-5">
-                <span className="font-bold text-white" style={{ fontFamily: "var(--font-syne)" }}>Total produits</span>
+                <span className="font-bold text-white" style={{ fontFamily: "var(--font-syne)" }}>Total</span>
                 <span className="price text-lg">
-                  {totalPrice.toLocaleString("fr-DZ")}<span>DA</span>
+                  {totalWithShipping.toLocaleString("fr-DZ")}<span>DA</span>
                 </span>
               </div>
 

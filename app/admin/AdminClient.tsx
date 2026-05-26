@@ -35,9 +35,16 @@ interface Order {
   message?: string | null;
   total: number | null;
   total_price?: number | null;
+  shipping_fee?: number | null;
+  shipping_option?: string | null;
   statut: string;
   items: OrderItem[];
 }
+
+const SHIPPING_OPTION_DISPLAY: Record<string, string> = {
+  domicile: "Domicile",
+  stop_desk: "Point relais",
+};
 
 export default function AdminClient() {
   const router = useRouter();
@@ -281,6 +288,19 @@ export default function AdminClient() {
                           {order.adresse}
                         </p>
                       </div>
+                      {order.shipping_option && (
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#6b7280] mb-2">Mode de livraison</p>
+                          <p className="text-sm text-[#f5f5f5]">
+                            {SHIPPING_OPTION_DISPLAY[order.shipping_option] ?? order.shipping_option}
+                            {order.shipping_fee != null && (
+                              <span className="text-[#9ca3af] ml-2">
+                                — {Number(order.shipping_fee).toLocaleString("fr-DZ")} DA
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      )}
                       {order.message && (
                         <div>
                           <p className="text-[10px] font-bold uppercase tracking-wider text-[#6b7280] mb-2">Note du client</p>

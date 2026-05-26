@@ -32,6 +32,10 @@ create table if not exists public.commandes (
 create index if not exists commandes_user_id_idx  on public.commandes (user_id);
 create index if not exists commandes_created_at_idx on public.commandes (created_at desc);
 
+-- Colonnes ajoutées en cours de route (idempotent) :
+alter table public.commandes add column if not exists shipping_fee numeric(10,2);
+alter table public.commandes add column if not exists shipping_option text;
+
 -- ──────────────────────────────────────────────────────────────────────────
 -- 2. TABLE `avis` — créée si manquante (idempotent)
 -- ──────────────────────────────────────────────────────────────────────────

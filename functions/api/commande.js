@@ -136,9 +136,22 @@ export async function onRequestPost(context) {
     const email = trim(data.email, 150);
     const userId = typeof data.userId === "string" ? data.userId : null;
     const items = Array.isArray(data.items) ? data.items.slice(0, 50) : [];
+    const shippingOption =
+      data.shippingOption === "stop_desk" ? "stop_desk" : "domicile";
+    const shippingFeeRaw = Number(data.shippingFee);
+    const shippingFee = Number.isFinite(shippingFeeRaw) && shippingFeeRaw >= 0
+      ? Math.round(shippingFeeRaw)
+      : null;
 
     if (!prenom || !nom || !adresse || !daira || !telephone || !wilaya) {
       return new Response(JSON.stringify({ error: "Champs obligatoires manquants" }), {
+        status: 400,
+        headers: baseHeaders,
+      });
+    }
+
+    if (shippingFee === null) {
+      return new Response(JSON.stringify({ error: "Frais de livraison manquants" }), {
         status: 400,
         headers: baseHeaders,
       });
@@ -210,6 +223,11 @@ export async function onRequestPost(context) {
       })
       .join("");
 
+    const grandTotal = totalCalc + shippingFee;
+
+    const shippingLabel =
+      shippingOption === "stop_desk" ? "Point relais (Stop Desk)" : "Livraison à domicile";
+
     const orderTableHtml = `
       <table style="border-collapse:collapse;width:100%;">
         <thead>
@@ -222,7 +240,9 @@ export async function onRequestPost(context) {
         </thead>
         <tbody>${itemRows}</tbody>
       </table>
-      <p style="margin-top:14px;"><strong>Total commande :</strong> ${totalCalc.toLocaleString("fr-DZ")} DA</p>
+      <p style="margin-top:14px;">Sous-total produits : <strong>${totalCalc.toLocaleString("fr-DZ")} DA</strong></p>
+      <p style="margin-top:4px;">Livraison (${escapeHtml(shippingLabel)}) : <strong>${shippingFee.toLocaleString("fr-DZ")} DA</strong></p>
+      <p style="margin-top:8px;font-size:16px;"><strong>Total commande : ${grandTotal.toLocaleString("fr-DZ")} DA</strong></p>
     `;
 
     // Admin email
@@ -236,6 +256,7 @@ export async function onRequestPost(context) {
       ${codePostal ? `<p><strong>Code postal :</strong> ${escapeHtml(codePostal)}</p>` : ""}
       <p><strong>Daïra :</strong> ${escapeHtml(daira)}</p>
       <p><strong>Wilaya :</strong> ${escapeHtml(wilaya)}</p>
+      <p><strong>Mode de livraison :</strong> ${escapeHtml(shippingLabel)}</p>
       <p><strong>Téléphone :</strong> ${escapeHtml(phoneClean)}</p>
       <p><strong>Email client :</strong> ${escapeHtml(email)}</p>
       ${message ? `<p><strong>Note :</strong> ${escapeHtml(message).replace(/\n/g, "<br>")}</p>` : ""}
@@ -345,11 +366,30 @@ export async function onRequestPost(context) {
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               ${productRows}
               <tr>
-                <td style="padding:18px 0 0;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:15px;font-weight:600;">
+                <td style="padding:14px 0 2px;font-family:Helvetica,Arial,sans-serif;color:#6b7280;font-size:13px;">
+                  Sous-total
+                </td>
+                <td style="padding:14px 0 2px;text-align:right;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:13px;font-weight:600;white-space:nowrap;">
+                  ${totalCalc.toLocaleString("fr-DZ")} DA
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0;font-family:Helvetica,Arial,sans-serif;color:#6b7280;font-size:13px;">
+                  Livraison <span style="color:#9ca3af;font-size:11px;">(${escapeHtml(shippingLabel)})</span>
+                </td>
+                <td style="padding:4px 0;text-align:right;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:13px;font-weight:600;white-space:nowrap;">
+                  ${shippingFee.toLocaleString("fr-DZ")} DA
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" style="padding-top:8px;"><div style="border-top:1px solid #ececec;"></div></td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0 0;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:15px;font-weight:700;">
                   Total
                 </td>
-                <td style="padding:18px 0 0;text-align:right;font-family:Helvetica,Arial,sans-serif;color:#6b3fa0;font-size:20px;font-weight:700;white-space:nowrap;">
-                  ${totalCalc.toLocaleString("fr-DZ")} DA
+                <td style="padding:10px 0 0;text-align:right;font-family:Helvetica,Arial,sans-serif;color:#6b3fa0;font-size:20px;font-weight:700;white-space:nowrap;">
+                  ${grandTotal.toLocaleString("fr-DZ")} DA
                 </td>
               </tr>
             </table>
@@ -369,6 +409,7 @@ export async function onRequestPost(context) {
               ${codePostal ? infoRow("Code postal", codePostal) : ""}
               ${infoRow("Daïra", daira)}
               ${infoRow("Wilaya", wilaya)}
+              ${infoRow("Mode", shippingLabel)}
               ${message ? infoRow("Note", message) : ""}
             </table>
           </td>
@@ -445,14 +486,17 @@ Merci ${prenom}, votre commande a bien été reçue. Notre équipe vous contacte
 RÉCAPITULATIF
 ${productLinesTxt}
 
-Total : ${totalCalc.toLocaleString("fr-DZ")} DA
+Sous-total : ${totalCalc.toLocaleString("fr-DZ")} DA
+Livraison (${shippingLabel}) : ${shippingFee.toLocaleString("fr-DZ")} DA
+Total : ${grandTotal.toLocaleString("fr-DZ")} DA
 
 LIVRAISON
 Nom : ${prenom} ${nom}
 Téléphone : ${phoneClean}
 Adresse : ${adresse}${codePostal ? `\nCode postal : ${codePostal}` : ""}
 Daïra : ${daira}
-Wilaya : ${wilaya}${message ? `\nNote : ${message}` : ""}
+Wilaya : ${wilaya}
+Mode : ${shippingLabel}${message ? `\nNote : ${message}` : ""}
 
 Paiement à la livraison — aucun paiement en ligne.
 
@@ -509,8 +553,10 @@ https://techxpressdz.com`;
         wilaya,
         message: message || null,
         items: items,
-        total: totalCalc,
-        total_price: totalCalc,
+        total: grandTotal,
+        total_price: grandTotal,
+        shipping_fee: shippingFee,
+        shipping_option: shippingOption,
         statut: "en_attente",
       });
     } catch (e) {
