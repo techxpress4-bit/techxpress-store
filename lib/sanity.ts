@@ -15,9 +15,11 @@ export function urlFor(source: SanityImage) {
   return builder.image(source);
 }
 
+const freshClient = client.withConfig({ useCdn: false });
+
 export async function sanityFetch<T>(
   query: string,
   params: Record<string, unknown> = {}
 ): Promise<T> {
-  return client.fetch<T>(query, params);
+  return freshClient.fetch<T>(query, params);
 }
