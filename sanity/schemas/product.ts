@@ -186,14 +186,12 @@ export const productSchema = defineType({
               title: "Caractéristique",
               type: "string",
               description: "Nom court (ex: Bluetooth, Résolution, RAM)",
-              validation: (R) => R.required().min(1).max(60),
             }),
             defineField({
               name: "valeur",
               title: "Valeur",
               type: "string",
               description: "Valeur correspondante (ex: 5.4, 4K Ultra HD, 2 Go)",
-              validation: (R) => R.required().min(1).max(200),
             }),
           ],
           preview: {
@@ -297,9 +295,7 @@ export const productSchema = defineType({
       name: "garantie",
       title: "Durée de garantie (mois)",
       type: "number",
-      description: "Décret algérien 05-468 SAV : durée de garantie obligatoire. Ex: 12, 24",
-      validation: (Rule) =>
-        Rule.required().min(0).integer().error("Garantie obligatoire (décret 05-468 SAV)"),
+      description: "Ex: 12, 24. Optionnel.",
     }),
     defineField({
       name: "reference",
@@ -334,7 +330,6 @@ export const productSchema = defineType({
       if (!hasPhoto) missing.push("photo");
       if (!hasDesc) missing.push("description");
       if (!marque) missing.push("marque");
-      if (typeof garantie !== "number") missing.push("garantie");
       if (typeof prix !== "number" || prix <= 0) missing.push("prix");
 
       const stockTag = enStock === false ? "❌ Rupture" : "✅ En stock";
