@@ -117,22 +117,26 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* ── Zone info (fond légèrement plus foncé) ── */}
-      <div className="p-3 sm:p-4 flex-1 flex flex-col" style={{ background: "#efefef" }}>
+      <div className="p-3 sm:p-4" style={{ background: "#efefef" }}>
         <h3
           className="text-xs sm:text-sm font-semibold text-neutral-900 leading-snug line-clamp-2 min-h-[2.4em] sm:min-h-[2.6em]"
           style={{ fontFamily: "var(--font-syne)" }}
         >
           {product.nom}
         </h3>
-        {product.categorie && (
-          <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5 sm:mt-1 line-clamp-1">
-            {product.categorie.nom}
-          </p>
-        )}
-        <div className="min-h-[1.5rem] flex items-center mt-1.5">
+
+        {/* Catégorie (gauche) + couleurs (droite) sur la même ligne */}
+        <div className="flex items-center justify-between gap-2 mt-0.5 sm:mt-1 min-h-[1.25rem]">
+          {product.categorie ? (
+            <p className="text-[10px] sm:text-xs text-neutral-500 line-clamp-1 flex-1 min-w-0">
+              {product.categorie.nom}
+            </p>
+          ) : (
+            <span className="flex-1" />
+          )}
           {product.variantes && product.variantes.length > 0 && (
-            <div className="flex items-center gap-1 flex-wrap">
-              {product.variantes.slice(0, 6).map((v) =>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {product.variantes.slice(0, 5).map((v) =>
                 v.couleur ? (
                   <span
                     key={v._key}
@@ -146,17 +150,18 @@ export default function ProductCard({ product }: ProductCardProps) {
                     title={v.nom}
                     className="text-[9px] font-medium text-neutral-600 px-1.5 py-0.5 rounded border border-neutral-300 bg-white flex-shrink-0 leading-none"
                   >
-                    {v.nom.length > 8 ? `${v.nom.slice(0, 7)}…` : v.nom}
+                    {v.nom.length > 6 ? `${v.nom.slice(0, 5)}…` : v.nom}
                   </span>
                 )
               )}
-              {product.variantes.length > 6 && (
-                <span className="text-[9px] text-neutral-400">+{product.variantes.length - 6}</span>
+              {product.variantes.length > 5 && (
+                <span className="text-[9px] text-neutral-400">+{product.variantes.length - 5}</span>
               )}
             </div>
           )}
         </div>
-        <div className="mt-auto pt-2 sm:pt-3">
+
+        <div className="mt-2 sm:mt-2.5">
           <p className={`text-[10px] sm:text-xs leading-none mb-0.5 ${promo ? "text-neutral-400 line-through" : "text-transparent select-none"}`}>
             {product.prix.toLocaleString("fr-DZ")} DA
           </p>
