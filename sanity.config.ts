@@ -1,11 +1,20 @@
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
-import { presentationTool, defineLocations } from "sanity/presentation";
 import { visionTool } from "@sanity/vision";
 import { schemas } from "./sanity/schemas";
 import { productActions } from "./sanity/actions/productActions";
 
 const SITE_URL = "https://techxpressdz.com";
+
+type DocWithSlug = { _type?: string; slug?: { current?: string } };
+
+function resolveProductionUrl(doc: DocWithSlug | undefined): string | undefined {
+  const slug = doc?.slug?.current;
+  if (doc?._type === "product" && slug) return `${SITE_URL}/produit/${slug}`;
+  if (doc?._type === "category" && slug) return `${SITE_URL}/catalogue/${slug}`;
+  if (doc?._type === "bestSellers") return SITE_URL;
+  return undefined;
+}
 
 export default defineConfig({
   name: "techxpress",
@@ -92,51 +101,13 @@ export default defineConfig({
 
           ]),
     }),
-    presentationTool({
-      title: "Preview",
-      previewUrl: {
-        origin: SITE_URL,
-      },
-      resolve: {
-        locations: {
-          product: defineLocations({
-            select: { nom: "nom", slug: "slug.current" },
-            resolve: (doc) => ({
-              locations: [
-                {
-                  title: doc?.nom || "Produit",
-                  href: doc?.slug ? `/produit/${doc.slug}` : "/",
-                },
-                { title: "Accueil", href: "/" },
-                { title: "Catalogue", href: "/catalogue" },
-              ],
-            }),
-          }),
-          category: defineLocations({
-            select: { nom: "nom", slug: "slug.current" },
-            resolve: (doc) => ({
-              locations: [
-                {
-                  title: doc?.nom || "Catégorie",
-                  href: doc?.slug ? `/catalogue/${doc.slug}` : "/catalogue",
-                },
-                { title: "Catalogue", href: "/catalogue" },
-                { title: "Accueil", href: "/" },
-              ],
-            }),
-          }),
-          bestSellers: defineLocations({
-            select: { _id: "_id" },
-            resolve: () => ({
-              locations: [{ title: "Accueil", href: "/" }],
-            }),
-          }),
-        },
-      },
-    }),
     visionTool(),
   ],
   document: {
+    productionUrl: async (prev, ctx) => {
+      const url = resolveProductionUrl(ctx.document as DocWithSlug);
+      return url || prev;
+    },
     actions: (prev, ctx) =>
       ctx.schemaType === "product" ? [...prev, ...productActions] : prev,
   },
