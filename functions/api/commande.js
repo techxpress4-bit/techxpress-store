@@ -48,7 +48,7 @@ async function saveToSupabase(env, payload) {
   const key = env.SUPABASE_SERVICE_KEY;
   if (!url || !key) {
     console.warn("[commande] Supabase not configured; skipping save");
-    return;
+    return { ok: false, status: 0, error: "supabase_not_configured" };
   }
   const res = await fetch(`${url}/rest/v1/commandes`, {
     method: "POST",
@@ -63,7 +63,9 @@ async function saveToSupabase(env, payload) {
   if (!res.ok) {
     const errTxt = await res.text().catch(() => "");
     console.error(`[commande] Supabase insert failed ${res.status}: ${errTxt}`);
+    return { ok: false, status: res.status, error: errTxt };
   }
+  return { ok: true, status: res.status };
 }
 
 export async function onRequestPost(context) {
@@ -475,31 +477,43 @@ https://techxpressdz.com`;
         console.error(`[commande] customer email exception:`, e?.message || e);
       });
 
-    const supabaseSave = saveToSupabase(env, {
-      user_id: userId,
-      email,
-      prenom,
-      nom,
-      adresse: adresseComplete,
-      telephone: phoneClean,
-      wilaya,
-      message: message || null,
-      items: items,
-      total: totalCalc,
-      statut: "en_attente",
-    }).catch((e) => {
+    // Await Supabase save inline so we can surface diagnostic info in the
+    // response. Customer email keeps the waitUntil pattern (no need to block
+    // the user).
+    let supabaseResult;
+    try {
+      supabaseResult = await saveToSupabase(env, {
+        user_id: userId,
+        email,
+        prenom,
+        nom,
+        adresse: adresseComplete,
+        telephone: phoneClean,
+        wilaya,
+        message: message || null,
+        items: items,
+        total: totalCalc,
+        total_price: totalCalc,
+        statut: "en_attente",
+      });
+    } catch (e) {
       console.error(`[commande] Supabase save exception:`, e?.message || e);
-    });
+      supabaseResult = { ok: false, status: 0, error: String(e?.message || e) };
+    }
 
     if (typeof waitUntil === "function") {
       waitUntil(customerSend);
-      waitUntil(supabaseSave);
     } else {
-      // Fallback: wait inline. Slower response but guarantees completion.
-      await Promise.allSettled([customerSend, supabaseSave]);
+      await customerSend;
     }
 
-    return new Response(JSON.stringify({ success: true }), { headers: baseHeaders });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        _supabase: supabaseResult,
+      }),
+      { headers: baseHeaders }
+    );
   } catch (err) {
     return new Response(JSON.stringify({ error: "Erreur serveur", detail: String(err?.message || err) }), {
       status: 500,

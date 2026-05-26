@@ -243,7 +243,7 @@ export default function Navbar() {
                         </svg>
                         Mon compte
                       </Link>
-                      <Link href="/account" onClick={() => setUserMenuOpen(false)}
+                      <Link href="/account?tab=commandes" onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#9ca3af] hover:text-white hover:bg-[#1a1a1a] transition-colors">
                         <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
@@ -470,7 +470,7 @@ export default function Navbar() {
               </Link>
               {user ? (
                 <>
-                  <Link href="/account" className="block px-4 py-2.5 rounded-xl text-sm text-[#9ca3af] hover:text-white hover:bg-[#161616] transition-colors" onClick={() => setMenuOpen(false)}>
+                  <Link href="/account?tab=commandes" className="block px-4 py-2.5 rounded-xl text-sm text-[#9ca3af] hover:text-white hover:bg-[#161616] transition-colors" onClick={() => setMenuOpen(false)}>
                     Mes commandes
                   </Link>
                   <button
