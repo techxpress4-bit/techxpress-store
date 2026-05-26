@@ -32,7 +32,7 @@ function normalize(str: string) {
   return str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
-const categories = [
+const ALL_CATEGORIES = [
   { nom: "Box TV Android",    searchNom: "Box TV Android",          slug: "box-tv-android" },
   { nom: "Abonnements TV",    searchNom: "Abonnements TV",           slug: "abonnements-tv" },
   { nom: "Accessoires Tél.", searchNom: "Accessoires Telephone",    slug: "accessoires-telephone" },
@@ -50,6 +50,11 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [allProducts, setAllProducts] = useState<SearchProduct[]>([]);
+  const [allowedSlugs, setAllowedSlugs] = useState<Set<string> | null>(null);
+  const categories =
+    allowedSlugs === null
+      ? ALL_CATEGORIES
+      : ALL_CATEGORIES.filter((c) => allowedSlugs.has(c.slug));
   const [suggestions, setSuggestions] = useState<SearchSuggestions>({ categories: [], products: [] });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -95,12 +100,16 @@ export default function Navbar() {
 
   useEffect(() => {
     // useCdn: false bypasses CDN CORS restrictions for client-side browser fetches
-    sanityClient
-      .withConfig({ useCdn: false })
-      .fetch<SearchProduct[]>(
-        `*[_type == "product"] | order(nom asc) { _id, nom, slug, prix, categorie->{ nom, slug } }`
-      )
+    const c = sanityClient.withConfig({ useCdn: false });
+    c.fetch<SearchProduct[]>(
+      `*[_type == "product"] | order(nom asc) { _id, nom, slug, prix, categorie->{ nom, slug } }`
+    )
       .then(setAllProducts)
+      .catch(() => {});
+    c.fetch<{ slug: { current: string } }[]>(
+      `*[_type == "category" && count(*[_type == "product" && references(^._id)]) > 0]{ slug }`
+    )
+      .then((cats) => setAllowedSlugs(new Set(cats.map((x) => x.slug.current))))
       .catch(() => {});
   }, []);
 
