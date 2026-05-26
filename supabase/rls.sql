@@ -73,7 +73,30 @@ create policy "commandes_own_select"
   to authenticated
   using (
     user_id = auth.uid()
-    or lower(email) = lower(auth.email())
+    or lower(email) = lower((auth.jwt() ->> 'email'))
+  );
+
+-- Admin : peut voir et modifier TOUTES les commandes (page /admin)
+-- ⚠️ Ajouter ici l'email de chaque admin séparé par virgule.
+drop policy if exists "commandes_admin_select" on public.commandes;
+create policy "commandes_admin_select"
+  on public.commandes
+  for select
+  to authenticated
+  using (
+    lower((auth.jwt() ->> 'email')) in ('qlkdu33@gmail.com')
+  );
+
+drop policy if exists "commandes_admin_update" on public.commandes;
+create policy "commandes_admin_update"
+  on public.commandes
+  for update
+  to authenticated
+  using (
+    lower((auth.jwt() ->> 'email')) in ('qlkdu33@gmail.com')
+  )
+  with check (
+    lower((auth.jwt() ->> 'email')) in ('qlkdu33@gmail.com')
   );
 
 -- Anon : aucun accès (pas de SELECT, pas d'INSERT, pas d'UPDATE, pas de DELETE)
