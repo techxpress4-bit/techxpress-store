@@ -116,6 +116,8 @@ export async function onRequestPost(context) {
     const prenom = trim(data.prenom, 80);
     const nom = trim(data.nom, 80);
     const adresse = trim(data.adresse, 300);
+    const codePostal = trim(data.codePostal, 20);
+    const daira = trim(data.daira, 80);
     const telephone = trim(data.telephone, 30);
     const wilaya = trim(data.wilaya, 80);
     const message = trim(data.message, 1000);
@@ -123,12 +125,22 @@ export async function onRequestPost(context) {
     const userId = typeof data.userId === "string" ? data.userId : null;
     const items = Array.isArray(data.items) ? data.items.slice(0, 50) : [];
 
-    if (!prenom || !nom || !adresse || !telephone || !wilaya) {
+    if (!prenom || !nom || !adresse || !daira || !telephone || !wilaya) {
       return new Response(JSON.stringify({ error: "Champs obligatoires manquants" }), {
         status: 400,
         headers: baseHeaders,
       });
     }
+
+    // Adresse complète pour stockage Supabase (1 colonne) et email
+    const adresseComplete = [
+      adresse,
+      codePostal ? `Code postal : ${codePostal}` : null,
+      `Daïra : ${daira}`,
+      `Wilaya : ${wilaya}`,
+    ]
+      .filter(Boolean)
+      .join(" — ");
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return new Response(JSON.stringify({ error: "Email invalide" }), {
         status: 400,
@@ -202,8 +214,10 @@ export async function onRequestPost(context) {
       <p><strong>Prénom :</strong> ${escapeHtml(prenom)}</p>
       <p><strong>Nom :</strong> ${escapeHtml(nom)}</p>
       <p><strong>Adresse :</strong> ${escapeHtml(adresse)}</p>
-      <p><strong>Téléphone :</strong> ${escapeHtml(phoneClean)}</p>
+      ${codePostal ? `<p><strong>Code postal :</strong> ${escapeHtml(codePostal)}</p>` : ""}
+      <p><strong>Daïra :</strong> ${escapeHtml(daira)}</p>
       <p><strong>Wilaya :</strong> ${escapeHtml(wilaya)}</p>
+      <p><strong>Téléphone :</strong> ${escapeHtml(phoneClean)}</p>
       <p><strong>Email client :</strong> ${escapeHtml(email)}</p>
       ${message ? `<p><strong>Note :</strong> ${escapeHtml(message).replace(/\n/g, "<br>")}</p>` : ""}
       <h3>Produits commandés</h3>
@@ -250,12 +264,17 @@ export async function onRequestPost(context) {
                   <td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(phoneClean)}</td>
                 </tr>
                 <tr>
-                  <td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Wilaya</td>
-                  <td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(wilaya)}</td>
-                </tr>
-                <tr>
                   <td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Adresse</td>
                   <td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(adresse)}</td>
+                </tr>
+                ${codePostal ? `<tr><td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Code postal</td><td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(codePostal)}</td></tr>` : ""}
+                <tr>
+                  <td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Daïra</td>
+                  <td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(daira)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Wilaya</td>
+                  <td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(wilaya)}</td>
                 </tr>
                 ${message ? `<tr><td style="padding:8px 0;color:#6b7280;font-size:13px;border-top:1px solid #1f1f1f;">Note</td><td style="padding:8px 0;color:#f5f5f5;font-size:13px;border-top:1px solid #1f1f1f;">${escapeHtml(message)}</td></tr>` : ""}
               </table>
@@ -320,12 +339,15 @@ export async function onRequestPost(context) {
     sendEmail(apiKey, { from: fromEmail, to: customerEmail, subject: customerSubject, html: customerHtml }).catch(() => {});
 
     // Save to Supabase (non-blocking)
+    // Note: stores the concatenated `adresseComplete` in the existing `adresse`
+    // column so no schema migration is needed. Code postal and Daïra are
+    // embedded in that string.
     saveToSupabase(env, {
       user_id: userId,
       email,
       prenom,
       nom,
-      adresse,
+      adresse: adresseComplete,
       telephone: phoneClean,
       wilaya,
       message: message || null,

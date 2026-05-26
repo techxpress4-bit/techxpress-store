@@ -24,6 +24,8 @@ export default function CommanderClient() {
     prenom: "",
     nom: "",
     adresse: "",
+    codePostal: "",
+    daira: "",
     telephone: "",
     wilaya: "",
     email: "",
@@ -167,7 +169,7 @@ export default function CommanderClient() {
               </div>
 
               <div className="mt-4">
-                <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Adresse complète *</label>
+                <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Adresse *</label>
                 <input
                   type="text"
                   name="adresse"
@@ -175,9 +177,39 @@ export default function CommanderClient() {
                   value={form.adresse}
                   onChange={handleChange}
                   required
-                  placeholder="Numéro, rue, quartier, commune..."
+                  placeholder="Numéro, rue, quartier..."
                   className="input-field"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Code postal (facultatif)</label>
+                  <input
+                    type="text"
+                    name="codePostal"
+                    autoComplete="postal-code"
+                    inputMode="numeric"
+                    value={form.codePostal}
+                    onChange={handleChange}
+                    placeholder="ex : 16000"
+                    className="input-field"
+                    maxLength={10}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#9ca3af] mb-1.5">Daïra *</label>
+                  <input
+                    type="text"
+                    name="daira"
+                    autoComplete="address-level2"
+                    value={form.daira}
+                    onChange={handleChange}
+                    required
+                    placeholder="Daïra de livraison"
+                    className="input-field"
+                  />
+                </div>
               </div>
 
               {/* Email */}
