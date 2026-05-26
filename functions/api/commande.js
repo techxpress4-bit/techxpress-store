@@ -43,8 +43,11 @@ async function sendEmail(apiKey, { from, to, subject, html }) {
 async function saveToSupabase(env, payload) {
   const url = env.NEXT_PUBLIC_SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_KEY;
-  if (!url || !key) return;
-  await fetch(`${url}/rest/v1/commandes`, {
+  if (!url || !key) {
+    console.warn("[commande] Supabase not configured; skipping save");
+    return;
+  }
+  const res = await fetch(`${url}/rest/v1/commandes`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${key}`,
@@ -54,10 +57,14 @@ async function saveToSupabase(env, payload) {
     },
     body: JSON.stringify(payload),
   });
+  if (!res.ok) {
+    const errTxt = await res.text().catch(() => "");
+    console.error(`[commande] Supabase insert failed ${res.status}: ${errTxt}`);
+  }
 }
 
 export async function onRequestPost(context) {
-  const { request, env } = context;
+  const { request, env, waitUntil } = context;
   const origin = request.headers.get("Origin") || "";
   const baseHeaders = { "Content-Type": "application/json", ...corsHeaders(origin) };
 
@@ -335,14 +342,27 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Send customer confirmation (non-blocking — don't fail the order if this fails)
-    sendEmail(apiKey, { from: fromEmail, to: customerEmail, subject: customerSubject, html: customerHtml }).catch(() => {});
+    // Send customer confirmation + save to Supabase, both wrapped in waitUntil
+    // so Cloudflare keeps the request alive after the Response is returned.
+    // Without waitUntil, in-flight async work is cancelled the moment the
+    // response is sent.
+    const customerSend = sendEmail(apiKey, {
+      from: fromEmail,
+      to: customerEmail,
+      subject: customerSubject,
+      html: customerHtml,
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const t = await r.text().catch(() => "");
+          console.error(`[commande] customer email failed ${r.status}: ${t}`);
+        }
+      })
+      .catch((e) => {
+        console.error(`[commande] customer email exception:`, e?.message || e);
+      });
 
-    // Save to Supabase (non-blocking)
-    // Note: stores the concatenated `adresseComplete` in the existing `adresse`
-    // column so no schema migration is needed. Code postal and Daïra are
-    // embedded in that string.
-    saveToSupabase(env, {
+    const supabaseSave = saveToSupabase(env, {
       user_id: userId,
       email,
       prenom,
@@ -354,7 +374,17 @@ export async function onRequestPost(context) {
       items: items,
       total: totalCalc,
       statut: "en_attente",
-    }).catch(() => {});
+    }).catch((e) => {
+      console.error(`[commande] Supabase save exception:`, e?.message || e);
+    });
+
+    if (typeof waitUntil === "function") {
+      waitUntil(customerSend);
+      waitUntil(supabaseSave);
+    } else {
+      // Fallback: wait inline. Slower response but guarantees completion.
+      await Promise.allSettled([customerSend, supabaseSave]);
+    }
 
     return new Response(JSON.stringify({ success: true }), { headers: baseHeaders });
   } catch (err) {
