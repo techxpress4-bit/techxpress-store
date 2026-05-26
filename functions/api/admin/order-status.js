@@ -2,7 +2,7 @@
 // Updates a commande's statut + notifies the customer by email.
 // Auth: requires a Supabase access_token whose email is in ADMIN_EMAILS.
 
-const ADMIN_EMAILS = ["qlkdu33@gmail.com"];
+const ADMIN_EMAILS = ["qlkdu33@gmail.com", "techxpress4@gmail.com"];
 
 const ALLOWED_STATUSES = [
   "en_attente",

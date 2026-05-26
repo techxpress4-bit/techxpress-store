@@ -180,18 +180,25 @@ export async function onRequestPost(context) {
         const p = item?.product || {};
         const qty = Math.max(1, Math.min(99, Number(item?.quantity) || 1));
         const isAbonnement = item?.optionAbonnement === "box-abonnement";
+        const variantNom = trim(item?.variantNom || "", 80);
+        const variantPrix = Number(item?.variantPrix);
         const today = new Date().toISOString().split("T")[0];
         const promoActive = Number(p.prixPromo) > 0 && Number(p.prixPromo) < Number(p.prix) &&
           (!p.dateDebutPromo || p.dateDebutPromo <= today) &&
           (!p.dateFinPromo || p.dateFinPromo >= today);
         const prixBase = promoActive ? Number(p.prixPromo) : Number(p.prix) || 0;
+        // Priority: variant price > abonnement price > base price
         const unit =
-          isAbonnement && Number(p.prixAvecAbonnement) > 0
+          variantPrix > 0
+            ? variantPrix
+            : isAbonnement && Number(p.prixAvecAbonnement) > 0
             ? Number(p.prixAvecAbonnement)
             : prixBase;
         const ligneTotal = unit * qty;
         totalCalc += ligneTotal;
-        const label = isAbonnement ? " (avec abonnement TV)" : "";
+        const label =
+          (variantNom ? ` — ${variantNom}` : "") +
+          (isAbonnement ? " (avec abonnement TV)" : "");
         return `
           <tr>
             <td style="padding:8px;border:1px solid #ddd;">${escapeHtml(p.nom || "—")}${escapeHtml(label)}</td>
@@ -246,6 +253,8 @@ export async function onRequestPost(context) {
         const p = item?.product || {};
         const qty = Math.max(1, Math.min(99, Number(item?.quantity) || 1));
         const isAbonnement = item?.optionAbonnement === "box-abonnement";
+        const variantNom = trim(item?.variantNom || "", 80);
+        const variantPrix = Number(item?.variantPrix);
         const today = new Date().toISOString().split("T")[0];
         const promoActive =
           Number(p.prixPromo) > 0 &&
@@ -254,7 +263,9 @@ export async function onRequestPost(context) {
           (!p.dateFinPromo || p.dateFinPromo >= today);
         const prixBase = promoActive ? Number(p.prixPromo) : Number(p.prix) || 0;
         const unit =
-          isAbonnement && Number(p.prixAvecAbonnement) > 0
+          variantPrix > 0
+            ? variantPrix
+            : isAbonnement && Number(p.prixAvecAbonnement) > 0
             ? Number(p.prixAvecAbonnement)
             : prixBase;
         const lineTotal = unit * qty;
@@ -262,6 +273,7 @@ export async function onRequestPost(context) {
           <tr>
             <td style="padding:14px 0;border-bottom:1px solid #ececec;font-family:Helvetica,Arial,sans-serif;">
               <p style="margin:0;color:#1a1a1a;font-size:14px;font-weight:600;line-height:1.4;">${escapeHtml(p.nom || "Produit")}</p>
+              ${variantNom ? `<p style="margin:2px 0 0;color:#6b3fa0;font-size:12px;font-weight:600;">${escapeHtml(variantNom)}</p>` : ""}
               <p style="margin:4px 0 0;color:#6b7280;font-size:12px;">
                 Quantité&nbsp;: ${qty}${isAbonnement ? " &middot; Avec abonnement TV" : ""}
               </p>
@@ -406,6 +418,8 @@ export async function onRequestPost(context) {
         const p = item?.product || {};
         const qty = Math.max(1, Math.min(99, Number(item?.quantity) || 1));
         const isAbonnement = item?.optionAbonnement === "box-abonnement";
+        const variantNom = trim(item?.variantNom || "", 80);
+        const variantPrix = Number(item?.variantPrix);
         const today = new Date().toISOString().split("T")[0];
         const promoActive =
           Number(p.prixPromo) > 0 &&
@@ -414,10 +428,13 @@ export async function onRequestPost(context) {
           (!p.dateFinPromo || p.dateFinPromo >= today);
         const prixBase = promoActive ? Number(p.prixPromo) : Number(p.prix) || 0;
         const unit =
-          isAbonnement && Number(p.prixAvecAbonnement) > 0
+          variantPrix > 0
+            ? variantPrix
+            : isAbonnement && Number(p.prixAvecAbonnement) > 0
             ? Number(p.prixAvecAbonnement)
             : prixBase;
-        return `- ${p.nom || "Produit"} (x${qty}${isAbonnement ? ", avec abonnement TV" : ""}) — ${(unit * qty).toLocaleString("fr-DZ")} DA`;
+        const label = `${p.nom || "Produit"}${variantNom ? ` (${variantNom})` : ""}${isAbonnement ? ", avec abonnement TV" : ""}`;
+        return `- ${label} x${qty} — ${(unit * qty).toLocaleString("fr-DZ")} DA`;
       })
       .join("\n");
 

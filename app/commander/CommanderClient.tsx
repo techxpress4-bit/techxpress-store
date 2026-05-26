@@ -342,16 +342,22 @@ export default function CommanderClient() {
                   const promoActive = !!item.product.prixPromo && item.product.prixPromo < item.product.prix &&
                     (!item.product.dateDebutPromo || item.product.dateDebutPromo <= today) &&
                     (!item.product.dateFinPromo || item.product.dateFinPromo >= today);
-                  const unitPrice =
-                    item.optionAbonnement === "box-abonnement" && item.product.prixAvecAbonnement
+                  const unitPrice = item.variantPrix !== undefined
+                    ? item.variantPrix
+                    : item.optionAbonnement === "box-abonnement" && item.product.prixAvecAbonnement
                       ? item.product.prixAvecAbonnement
                       : promoActive ? item.product.prixPromo! : item.product.prix;
                   return (
-                    <div key={`${item.product._id}-${item.optionAbonnement}`} className="flex justify-between gap-3 text-sm">
+                    <div key={`${item.product._id}-${item.variantKey ?? "none"}-${item.optionAbonnement}`} className="flex justify-between gap-3 text-sm">
                       <div className="flex-1 min-w-0">
                         <p className="text-[#f5f5f5] line-clamp-2 text-xs font-medium" style={{ fontFamily: "var(--font-syne)" }}>
                           {item.product.nom}
                         </p>
+                        {item.variantNom && (
+                          <p className="text-xs mt-0.5 font-semibold" style={{ color: "var(--violet-light)" }}>
+                            {item.variantNom}
+                          </p>
+                        )}
                         {item.optionAbonnement && (
                           <p className="text-[#6b7280] text-xs mt-0.5">
                             {abonnementLabels[item.optionAbonnement]}

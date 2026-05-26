@@ -84,7 +84,7 @@ create policy "commandes_admin_select"
   for select
   to authenticated
   using (
-    lower((auth.jwt() ->> 'email')) in ('qlkdu33@gmail.com')
+    lower((auth.jwt() ->> 'email')) in ('qlkdu33@gmail.com', 'techxpress4@gmail.com')
   );
 
 drop policy if exists "commandes_admin_update" on public.commandes;
@@ -93,10 +93,10 @@ create policy "commandes_admin_update"
   for update
   to authenticated
   using (
-    lower((auth.jwt() ->> 'email')) in ('qlkdu33@gmail.com')
+    lower((auth.jwt() ->> 'email')) in ('qlkdu33@gmail.com', 'techxpress4@gmail.com')
   )
   with check (
-    lower((auth.jwt() ->> 'email')) in ('qlkdu33@gmail.com')
+    lower((auth.jwt() ->> 'email')) in ('qlkdu33@gmail.com', 'techxpress4@gmail.com')
   );
 
 -- Anon : aucun accès (pas de SELECT, pas d'INSERT, pas d'UPDATE, pas de DELETE)

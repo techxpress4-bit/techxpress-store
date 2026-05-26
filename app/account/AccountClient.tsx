@@ -18,6 +18,8 @@ interface OrderItem {
   product?: { nom?: string; prix?: number; prixPromo?: number };
   quantity?: number;
   optionAbonnement?: string;
+  variantNom?: string;
+  variantPrix?: number;
 }
 
 interface Order {
@@ -345,13 +347,15 @@ function AccountInner() {
                           {order.items.map((item, idx) => {
                             const qty = Number(item.quantity) || 1;
                             const isAbonnement = item.optionAbonnement === "box-abonnement";
-                            const today = new Date().toISOString().split("T")[0];
                             const p = item.product || {};
+                            const variantNom = item.variantNom;
+                            const variantPrix = Number(item.variantPrix);
                             const promoActive =
                               Number(p.prixPromo) > 0 &&
                               Number(p.prixPromo) < Number(p.prix);
-                            void today; // historical pricing baked in
-                            const unit = promoActive
+                            const unit = variantPrix > 0
+                              ? variantPrix
+                              : promoActive
                               ? Number(p.prixPromo)
                               : Number(p.prix) || 0;
                             return (
@@ -360,6 +364,11 @@ function AccountInner() {
                                   <p className="text-sm text-white leading-tight">
                                     {p.nom ?? "Produit"}
                                   </p>
+                                  {variantNom && (
+                                    <p className="text-[11px] mt-0.5 font-semibold" style={{ color: "var(--violet-light)" }}>
+                                      {variantNom}
+                                    </p>
+                                  )}
                                   <p className="text-[11px] text-[#6b7280] mt-0.5">
                                     Qté&nbsp;: {qty}
                                     {isAbonnement && " • avec abonnement TV"}

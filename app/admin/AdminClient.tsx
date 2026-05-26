@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
-const ADMIN_EMAILS = ["qlkdu33@gmail.com"];
+const ADMIN_EMAILS = ["qlkdu33@gmail.com", "techxpress4@gmail.com"];
 
 const STATUS_OPTIONS = [
   { value: "en_attente",   label: "En attente",    color: "#fbbf24", bg: "rgba(251,191,36,0.1)" },
@@ -19,6 +19,8 @@ interface OrderItem {
   product?: { nom?: string; prix?: number; prixPromo?: number };
   quantity?: number;
   optionAbonnement?: string;
+  variantNom?: string;
+  variantPrix?: number;
 }
 
 interface Order {
@@ -294,12 +296,25 @@ export default function AdminClient() {
                             const qty = Number(item.quantity) || 1;
                             const isAbonnement = item.optionAbonnement === "box-abonnement";
                             const p = item.product || {};
+                            const variantNom = item.variantNom;
+                            const variantPrix = Number(item.variantPrix);
                             const promoActive = Number(p.prixPromo) > 0 && Number(p.prixPromo) < Number(p.prix);
-                            const unit = promoActive ? Number(p.prixPromo) : Number(p.prix) || 0;
+                            const unit = variantPrix > 0
+                              ? variantPrix
+                              : promoActive
+                              ? Number(p.prixPromo)
+                              : Number(p.prix) || 0;
                             return (
                               <div key={idx} className="flex items-start justify-between gap-3 py-1.5 border-b border-[#1a1a1a] last:border-0">
                                 <div>
-                                  <p className="text-sm text-white">{p.nom ?? "Produit"}</p>
+                                  <p className="text-sm text-white">
+                                    {p.nom ?? "Produit"}
+                                    {variantNom && (
+                                      <span className="ml-2 text-[11px] font-semibold" style={{ color: "var(--violet-light)" }}>
+                                        — {variantNom}
+                                      </span>
+                                    )}
+                                  </p>
                                   <p className="text-[11px] text-[#6b7280] mt-0.5">
                                     Qté : {qty} · {unit.toLocaleString("fr-DZ")} DA/u
                                     {isAbonnement && " · avec abonnement TV"}
