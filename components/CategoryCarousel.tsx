@@ -4,6 +4,8 @@ import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Category } from "@/lib/types";
+import { client as sanityClient } from "@/lib/sanity";
+import { allCategoriesQuery } from "@/lib/queries";
 
 const categoryMeta: Record<string, { icon: string; gradient: string; accent: string }> = {
   "box-tv-android":        { icon: "📺", gradient: "135deg, #1a0533 0%, #4a1f7a 100%", accent: "#9b59fc" },
@@ -19,10 +21,21 @@ interface Props {
   categories: Category[];
 }
 
-export default function CategoryCarousel({ categories }: Props) {
+export default function CategoryCarousel({ categories: initialCategories }: Props) {
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(true);
+
+  useEffect(() => {
+    sanityClient
+      .withConfig({ useCdn: false })
+      .fetch<Category[]>(allCategoriesQuery)
+      .then((fresh) => {
+        if (Array.isArray(fresh) && fresh.length > 0) setCategories(fresh);
+      })
+      .catch(() => {});
+  }, []);
 
   function checkScroll() {
     const el = scrollRef.current;

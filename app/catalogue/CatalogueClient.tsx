@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { Product, Category } from "@/lib/types";
 import ProductCard from "@/components/ProductCard";
+import { client as sanityClient } from "@/lib/sanity";
+import { allProductsQuery, allCategoriesQuery } from "@/lib/queries";
 
 type SortOption = "default" | "price-asc" | "price-desc" | "name-asc" | "nouveau";
 
@@ -34,7 +36,24 @@ export default function CatalogueClient(props: Props) {
   );
 }
 
-function CatalogueInner({ products, categories, currentCategorySlug }: Props) {
+function CatalogueInner({ products: initialProducts, categories: initialCategories, currentCategorySlug }: Props) {
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+
+  useEffect(() => {
+    const c = sanityClient.withConfig({ useCdn: false });
+    c.fetch<Product[]>(allProductsQuery)
+      .then((fresh) => {
+        if (Array.isArray(fresh) && fresh.length > 0) setProducts(fresh);
+      })
+      .catch(() => {});
+    c.fetch<Category[]>(allCategoriesQuery)
+      .then((fresh) => {
+        if (Array.isArray(fresh) && fresh.length > 0) setCategories(fresh);
+      })
+      .catch(() => {});
+  }, []);
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
