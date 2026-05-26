@@ -111,21 +111,27 @@ export default function ProductPageClient() {
             <AddToCartSection product={product} onVariantChange={setSelectedVariant} />
 
             {/* Fiche technique */}
-            {product.ficheTechnique && product.ficheTechnique.length > 0 && (
-              <div className="mt-10">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4" style={{ fontFamily: "var(--font-syne)" }}>
-                  Fiche technique
-                </h3>
-                <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-                  {product.ficheTechnique.map((item, i) => (
-                    <div key={i} className={`flex items-center gap-4 px-4 py-3 text-sm ${i % 2 === 0 ? "bg-[#111]" : "bg-[#161616]"}`}>
-                      <span className="text-[#6b7280] font-medium w-32 flex-shrink-0">{item.cle}</span>
-                      <span className="text-[#f5f5f5]">{item.valeur}</span>
-                    </div>
-                  ))}
+            {(() => {
+              const specs = (product.ficheTechnique || []).filter(
+                (s) => s?.cle && s?.valeur,
+              );
+              if (specs.length === 0) return null;
+              return (
+                <div className="mt-10">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4" style={{ fontFamily: "var(--font-syne)" }}>
+                    Fiche technique
+                  </h3>
+                  <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+                    {specs.map((item, i) => (
+                      <div key={i} className={`flex items-center gap-4 px-4 py-3 text-sm ${i % 2 === 0 ? "bg-[#111]" : "bg-[#161616]"}`}>
+                        <span className="text-[#6b7280] font-medium w-32 flex-shrink-0">{item.cle}</span>
+                        <span className="text-[#f5f5f5]">{item.valeur}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Description */}
             {product.description && product.description.length > 0 && (

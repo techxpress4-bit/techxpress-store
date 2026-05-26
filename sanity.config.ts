@@ -1,8 +1,10 @@
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
 import { visionTool } from "@sanity/vision";
+import { RocketIcon } from "@sanity/icons";
 import { schemas } from "./sanity/schemas";
 import { productActions } from "./sanity/actions/productActions";
+import { DeployTool } from "./sanity/tools/DeployTool";
 
 const SITE_URL = "https://techxpressdz.com";
 
@@ -102,6 +104,15 @@ export default defineConfig({
           ]),
     }),
     visionTool(),
+  ],
+  tools: (prev) => [
+    ...prev,
+    {
+      name: "deploy",
+      title: "Déployer",
+      icon: RocketIcon,
+      component: DeployTool,
+    },
   ],
   document: {
     productionUrl: async (prev, ctx) => {

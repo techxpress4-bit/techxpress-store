@@ -173,17 +173,37 @@ export const productSchema = defineType({
     defineField({
       name: "ficheTechnique",
       title: "Fiche technique",
+      description:
+        "Tableau de caractéristiques en deux colonnes. Chaque ligne = une paire Caractéristique + Valeur (ex: « Bluetooth » + « 5.4 »). Pour les listes à puces, utilise plutôt la Description.",
       type: "array",
       of: [
         {
           type: "object",
           name: "spec",
           fields: [
-            defineField({ name: "cle", title: "Caractéristique", type: "string" }),
-            defineField({ name: "valeur", title: "Valeur", type: "string" }),
+            defineField({
+              name: "cle",
+              title: "Caractéristique",
+              type: "string",
+              description: "Nom court (ex: Bluetooth, Résolution, RAM)",
+              validation: (R) => R.required().min(1).max(60),
+            }),
+            defineField({
+              name: "valeur",
+              title: "Valeur",
+              type: "string",
+              description: "Valeur correspondante (ex: 5.4, 4K Ultra HD, 2 Go)",
+              validation: (R) => R.required().min(1).max(200),
+            }),
           ],
           preview: {
             select: { title: "cle", subtitle: "valeur" },
+            prepare({ title, subtitle }) {
+              return {
+                title: title || "⚠️ Caractéristique manquante",
+                subtitle: subtitle || "⚠️ Valeur manquante",
+              };
+            },
           },
         },
       ],
