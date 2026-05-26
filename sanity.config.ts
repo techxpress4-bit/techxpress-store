@@ -1,7 +1,11 @@
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
+import { presentationTool, defineLocations } from "sanity/presentation";
 import { visionTool } from "@sanity/vision";
 import { schemas } from "./sanity/schemas";
+import { productActions } from "./sanity/actions/productActions";
+
+const SITE_URL = "https://techxpressdz.com";
 
 export default defineConfig({
   name: "techxpress",
@@ -88,7 +92,53 @@ export default defineConfig({
 
           ]),
     }),
+    presentationTool({
+      title: "Preview",
+      previewUrl: {
+        origin: SITE_URL,
+      },
+      resolve: {
+        locations: {
+          product: defineLocations({
+            select: { nom: "nom", slug: "slug.current" },
+            resolve: (doc) => ({
+              locations: [
+                {
+                  title: doc?.nom || "Produit",
+                  href: doc?.slug ? `/produit/${doc.slug}` : "/",
+                },
+                { title: "Accueil", href: "/" },
+                { title: "Catalogue", href: "/catalogue" },
+              ],
+            }),
+          }),
+          category: defineLocations({
+            select: { nom: "nom", slug: "slug.current" },
+            resolve: (doc) => ({
+              locations: [
+                {
+                  title: doc?.nom || "Catégorie",
+                  href: doc?.slug ? `/catalogue/${doc.slug}` : "/catalogue",
+                },
+                { title: "Catalogue", href: "/catalogue" },
+                { title: "Accueil", href: "/" },
+              ],
+            }),
+          }),
+          bestSellers: defineLocations({
+            select: { _id: "_id" },
+            resolve: () => ({
+              locations: [{ title: "Accueil", href: "/" }],
+            }),
+          }),
+        },
+      },
+    }),
     visionTool(),
   ],
+  document: {
+    actions: (prev, ctx) =>
+      ctx.schemaType === "product" ? [...prev, ...productActions] : prev,
+  },
   schema: { types: schemas },
 });
