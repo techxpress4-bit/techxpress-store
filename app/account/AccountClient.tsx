@@ -14,13 +14,20 @@ interface Profile {
   newsletter_opt_in?: boolean;
 }
 
+interface OrderItem {
+  product?: { nom?: string; prix?: number; prixPromo?: number };
+  quantity?: number;
+  optionAbonnement?: string;
+}
+
 interface Order {
   id: string;
   created_at: string;
   wilaya: string;
-  total: number;
+  total: number | null;
+  total_price?: number | null;
   statut: string;
-  items: { product?: { nom?: string }; quantity?: number }[];
+  items: OrderItem[];
 }
 
 type Tab = "compte" | "commandes";
@@ -93,7 +100,7 @@ function AccountInner() {
           // email match (for guest orders made before login with same email).
           const { data: orderRows } = await supabase
             .from("commandes")
-            .select("id, created_at, wilaya, total, statut, items")
+            .select("id, created_at, wilaya, total, total_price, statut, items")
             .order("created_at", { ascending: false })
             .limit(20);
           if (active) setOrders(orderRows ?? []);
@@ -296,7 +303,7 @@ function AccountInner() {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {orders.map((order) => {
                   const statut = statutLabels[order.statut] ?? { label: order.statut, color: "#9ca3af", bg: "rgba(156,163,175,0.1)" };
                   const date = new Date(order.created_at).toLocaleDateString("fr-FR", {
@@ -305,17 +312,23 @@ function AccountInner() {
                   const itemCount = Array.isArray(order.items)
                     ? order.items.reduce((s, i) => s + (Number(i.quantity) || 1), 0)
                     : 0;
+                  const totalValue = Number(order.total ?? order.total_price ?? 0);
+                  const orderRef = String(order.id).slice(0, 8).toUpperCase();
                   return (
                     <div
                       key={order.id}
-                      className="rounded-xl p-4"
+                      className="rounded-xl overflow-hidden"
                       style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
                     >
-                      <div className="flex items-start justify-between gap-3 mb-3">
+                      {/* Header */}
+                      <div className="p-4 flex items-start justify-between gap-3 border-b border-[#1f1f1f]">
                         <div>
-                          <p className="text-xs text-[#6b7280]">{date}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-[#4b5563] font-semibold">
+                            Commande #{orderRef}
+                          </p>
+                          <p className="text-xs text-[#6b7280] mt-1">{date}</p>
                           <p className="text-sm font-semibold text-white mt-0.5">
-                            {order.wilaya} — {itemCount} article{itemCount > 1 ? "s" : ""}
+                            {order.wilaya} • {itemCount} article{itemCount > 1 ? "s" : ""}
                           </p>
                         </div>
                         <span
@@ -325,17 +338,47 @@ function AccountInner() {
                           {statut.label}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-[#6b7280] space-y-0.5">
-                          {Array.isArray(order.items) && order.items.slice(0, 2).map((item, idx) => (
-                            <p key={idx}>{item.product?.nom ?? "Produit"} ×{item.quantity ?? 1}</p>
-                          ))}
-                          {Array.isArray(order.items) && order.items.length > 2 && (
-                            <p>+{order.items.length - 2} autre{order.items.length - 2 > 1 ? "s" : ""}</p>
-                          )}
+
+                      {/* Items list */}
+                      {Array.isArray(order.items) && order.items.length > 0 && (
+                        <div className="p-4 space-y-2 border-b border-[#1f1f1f]">
+                          {order.items.map((item, idx) => {
+                            const qty = Number(item.quantity) || 1;
+                            const isAbonnement = item.optionAbonnement === "box-abonnement";
+                            const today = new Date().toISOString().split("T")[0];
+                            const p = item.product || {};
+                            const promoActive =
+                              Number(p.prixPromo) > 0 &&
+                              Number(p.prixPromo) < Number(p.prix);
+                            void today; // historical pricing baked in
+                            const unit = promoActive
+                              ? Number(p.prixPromo)
+                              : Number(p.prix) || 0;
+                            return (
+                              <div key={idx} className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-sm text-white leading-tight">
+                                    {p.nom ?? "Produit"}
+                                  </p>
+                                  <p className="text-[11px] text-[#6b7280] mt-0.5">
+                                    Qté&nbsp;: {qty}
+                                    {isAbonnement && " • avec abonnement TV"}
+                                  </p>
+                                </div>
+                                <p className="text-xs text-[#9ca3af] flex-shrink-0 whitespace-nowrap">
+                                  {(unit * qty).toLocaleString("fr-DZ")} DA
+                                </p>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <p className="text-sm font-bold" style={{ color: "var(--violet-light)" }}>
-                          {Number(order.total).toLocaleString("fr-DZ")} DA
+                      )}
+
+                      {/* Footer */}
+                      <div className="p-4 flex items-center justify-between">
+                        <span className="text-xs text-[#6b7280] font-medium">Total</span>
+                        <p className="text-base font-bold" style={{ color: "var(--violet-light)" }}>
+                          {totalValue.toLocaleString("fr-DZ")} DA
                         </p>
                       </div>
                     </div>
