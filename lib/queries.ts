@@ -1,5 +1,5 @@
 export const allCategoriesQuery = `
-  *[_type == "category"] | order(ordre asc) {
+  *[_type == "category" && count(*[_type == "product" && references(^._id)]) > 0] | order(ordre asc) {
     _id, nom, slug, icone, description, ordre,
     image { asset->{ _id, url }, alt }
   }

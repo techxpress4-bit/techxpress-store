@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let products: { slug: { current: string }; _updatedAt?: string }[] = [];
 
   try {
-    categories = await sanityFetch(`*[_type=="category" && defined(slug.current)]{slug, _updatedAt}`);
+    categories = await sanityFetch(`*[_type=="category" && defined(slug.current) && count(*[_type == "product" && references(^._id)]) > 0]{slug, _updatedAt}`);
     products   = await sanityFetch(`*[_type=="product"  && defined(slug.current)]{slug, _updatedAt}`);
   } catch {
     // Fallback : on retourne juste les pages statiques si Sanity est indisponible
