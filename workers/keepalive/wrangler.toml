@@ -1,0 +1,22 @@
+name = "techxpress-keepalive"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Daily ping at 09:00 UTC (10/11h Algiers) — well within Supabase Free's 7-day
+# inactivity pause window. Workers Free plan covers 100k requests/day; we use
+# ~1/day.
+[triggers]
+crons = ["0 9 * * *"]
+
+[vars]
+# Both values are public (the anon key is the same one shipped in the frontend
+# bundle) so they're fine in version control.
+SUPABASE_URL = "https://urvoucdrdyqjdcysogez.supabase.co"
+
+# SUPABASE_ANON_KEY is set via:
+#   npx wrangler secret put SUPABASE_ANON_KEY --name techxpress-keepalive
+# (or pasted as a plain `var` here — anon key is public). Using secret form
+# anyway so it's easy to rotate without committing a new value.
+
+[observability]
+enabled = true
