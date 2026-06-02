@@ -12,7 +12,10 @@ export async function generateStaticParams() {
   const slugs = await sanityFetch<{ slug: { current: string } }[]>(
     `*[_type == "product"]{ slug }`
   );
-  return slugs.map((p) => ({ slug: p.slug.current }));
+  return [
+    { slug: "_shell" },
+    ...slugs.map((p) => ({ slug: p.slug.current })),
+  ];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

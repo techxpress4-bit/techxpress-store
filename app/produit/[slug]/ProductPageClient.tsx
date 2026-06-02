@@ -13,7 +13,7 @@ import ReviewSection from "@/components/ReviewSection";
 
 export default function ProductPageClient() {
   const params = useParams();
-  const slug = typeof params.slug === "string" ? params.slug : (params.slug?.[0] ?? "");
+  const fromParams = typeof params.slug === "string" ? params.slug : (params.slug?.[0] ?? "");
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,11 @@ export default function ProductPageClient() {
   const [selectedVariant, setSelectedVariant] = useState<Variante | null>(null);
 
   useEffect(() => {
-    if (!slug) return;
+    // When Cloudflare rewrites an unknown product slug to _shell, read the real slug from the URL
+    const slug = (fromParams && fromParams !== "_shell")
+      ? fromParams
+      : window.location.pathname.split("/").filter(Boolean).reduce<string>((acc, part, i, arr) => arr[i - 1] === "produit" ? part : acc, fromParams);
+    if (!slug || slug === "_shell") return;
     setLoading(true);
     sanityFetch<Product | null>(productBySlugQuery, { slug })
       .then((data) => {
@@ -31,7 +35,7 @@ export default function ProductPageClient() {
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [slug]);
+  }, [fromParams]);
 
   if (loading) return <ProductSkeleton />;
 
