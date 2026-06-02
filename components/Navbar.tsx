@@ -32,14 +32,12 @@ function normalize(str: string) {
   return str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
-const ALL_CATEGORIES = [
-  { nom: "Box TV Android",    searchNom: "Box TV Android",          slug: "box-tv-android" },
-  { nom: "Abonnements TV",    searchNom: "Abonnements TV",           slug: "abonnements-tv" },
-  { nom: "Accessoires Tél.", searchNom: "Accessoires Telephone",    slug: "accessoires-telephone" },
-  { nom: "Routeurs",          searchNom: "Routeurs Modem",           slug: "routeur-modem" },
-  { nom: "Câbles",            searchNom: "Cables",                   slug: "cables" },
-  { nom: "Supports TV",       searchNom: "Supports TV",              slug: "support-tv" },
-  { nom: "Paraboles",         searchNom: "Paraboles",                slug: "paraboles" },
+// Fallback statique affiché le temps que le fetch Sanity réponde (évite un menu vide au
+// premier rendu). La vraie liste — toutes les catégories ayant au moins un produit — est
+// chargée dynamiquement depuis Sanity dans le useEffect ci-dessous, donc toute nouvelle
+// catégorie apparaît automatiquement sans modifier ce code.
+const FALLBACK_CATEGORIES: CategoryItem[] = [
+  { nom: "Box TV Android", searchNom: "Box TV Android", slug: "box-tv-android" },
 ];
 
 export default function Navbar() {
@@ -50,11 +48,7 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [allProducts, setAllProducts] = useState<SearchProduct[]>([]);
-  const [allowedSlugs, setAllowedSlugs] = useState<Set<string> | null>(null);
-  const categories =
-    allowedSlugs === null
-      ? ALL_CATEGORIES
-      : ALL_CATEGORIES.filter((c) => allowedSlugs.has(c.slug));
+  const [categories, setCategories] = useState<CategoryItem[]>(FALLBACK_CATEGORIES);
   const [suggestions, setSuggestions] = useState<SearchSuggestions>({ categories: [], products: [] });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -106,10 +100,19 @@ export default function Navbar() {
     )
       .then(setAllProducts)
       .catch(() => {});
-    c.fetch<{ slug: { current: string } }[]>(
-      `*[_type == "category" && count(*[_type == "product" && references(^._id)]) > 0]{ slug }`
+    c.fetch<{ nom: string; slug: { current: string } }[]>(
+      `*[_type == "category" && count(*[_type == "product" && references(^._id)]) > 0] | order(ordre asc){ nom, slug }`
     )
-      .then((cats) => setAllowedSlugs(new Set(cats.map((x) => x.slug.current))))
+      .then((cats) => {
+        if (Array.isArray(cats) && cats.length > 0) {
+          setCategories(
+            cats.map((c) => {
+              const nom = c.nom.trim();
+              return { nom, searchNom: nom, slug: c.slug.current };
+            })
+          );
+        }
+      })
       .catch(() => {});
   }, []);
 
